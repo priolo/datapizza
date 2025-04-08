@@ -1,0 +1,39 @@
+{
+  "name": "jade",
+  "version": "0.0.1",
+  "description": "Simple OpenAI client for request completion",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "chat": "tsx src/datapizza/chat.ts",
+    "create_db": "tsx src/datapizza/create_db.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@ai-sdk/cohere": "^1.2.2",
+    "@ai-sdk/google": "^1.2.3",
+    "@ai-sdk/mistral": "^1.2.3",
+    "@lancedb/lancedb": "^0.18.1",
+    "@langchain/core": "^0.3.42",
+    "ai": "^4.2.8",
+    "apache-arrow": "^18.1.0",
+    "dotenv": "^16.0.3",
+    "langchain": "^0.3.19",
+    "pdfjs-dist": "^4.10.38",
+    "turndown": "^7.2.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^18.15.11",
+    "@types/pdfjs-dist": "^2.10.377",
+    "@types/turndown": "^5.0.5",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.6",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
