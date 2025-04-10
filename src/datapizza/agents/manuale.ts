@@ -5,9 +5,9 @@ import AgentFinder from "../../core/llm/AgentFinder.js"
 export async function buildManualeAgent() {
 	const agent = new AgentFinder(
 		"MANUALE",
-		{ 
-			description: `Sei un agente che risponde a domande sul Manuale dello chef Cucina di Sirius Cosmo
-Questo contiene informazioni su:
+		{
+			howAreYouPrompt: `Sei un agente che risponde a domande sul Manuale di Cucina dello chef Sirius Cosmo`,
+			contextPrompt: `Il Manuale di Cucina contiene informazioni su:
 1) Abilità e licenze.
 Una serie di abilità e licenze che ogni chef può avere.
 Ogni abilità ha:
@@ -31,7 +31,7 @@ Ognuna di queste ha:
 - Una descrizione di come funziona
 - Descrizione dei vantaggi
 - Descrizione degli svantaggi
-			`,
+`,
 			tableName: "kb_pizza_manual",
 			clearOnResponse: true,
 			maxCycles: 30,

@@ -11,11 +11,11 @@ export async function buildLeadAgent() {
     const codiceAgent = await buildCodiceAgent()
     const manualeAgent = await buildManualeAgent()
     const menuAgent = await buildMenuAgent()
-
     const leaderAgent = new Agent(
         "LEADER",
         <AgentOptions>{
-            systemPrompt: `Sei un Agente che risponde a domande su un mondo immaginario fantascientifico fatto di ricette, ristoranti, chef, preparazoni, ingredienti, licenze, norme pianeti galassie e popolazioni fantastiche.
+            howAreYouPrompt: `Sei un Agente che risponde a domande su un mondo immaginario fantascientifico fatto di ricette, ristoranti, chef, preparazoni, ingredienti, licenze, norme pianeti galassie e popolazioni fantastiche.`,
+            contextPrompt: `Tieni presente che:
 - Ogni pianeta ha un ristorante
 - Ogni ristornate ha una descrizione
 - Ogni ristorante ha uno chef

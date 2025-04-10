@@ -13,7 +13,6 @@ interface AgentFinderOptions extends AgentOptions {
 	captherLimit?: number
 	/** limit su PARAGRAPH */
 	paragraphLimit?: number
-
 }
 
 class AgentFinder extends Agent {
@@ -30,27 +29,8 @@ class AgentFinder extends Agent {
 	refs: string[] = []
 	tableName: string
 
-	protected getOptions(): AgentFinderOptions {
-		return {
-			...super.getOptions(),
-			description: "",
-			systemPrompt: `
-## TIENI CONTO CHE:
-1. Un "documento" è un insieme di "capitoli".
-2. Un "capitolo" è un testo abbastanza lungo che riguarda un argomento.
-3. Un "capitolo" è composto da più "blocchi di testo".
-4. Un "blocco di testo" è un testo breve di circa 300 lettere.
-5. Per le ricerce che restituiscono risultati semanticamente simili deve essere valutato il significato del testo.
-
-## TOOL A DISPOSIZIONE:
-Per avere informazioni devi usare i tool:
-- "get_all_index": restituisce una lista di "titoli" o brevi descrizioni di tutti i "blocchi di testo" nei "capitoli" per ogni "documento".
-- "search_single_word": restituisce una lista completa di tutti i "blocco di testo" che contengono esattamente la singola parola o frase.
-- "search_block_of_text": restituisce un limitato numero di "blocchi di testo" semanticamente simili alla "query".
-- "search_chapter": restituisce un limitatissimo numero di "capitoli" semanticamente simili alla "query".
-- "get_specific_chapter": per cercare un singolo capitolo specifico attraverso il suo ID.
-
-## STRATEGIA:
+	protected getStrategyTools(): string {
+		return `## Strategy for using tools 
 1. Se vuoi avere la lista dei "titoli" degli argomenti conosciuti 
 allora puoi usare "get_all_index" per avere un indice generico di tutti i "blocchi di testo" nei "capitoli" nei "documenti".
 2. Se vuoi informazioni attrverso una domanda, descrizione o frase generica che restituisca "blocchi di testo" semanticamente simili
@@ -61,9 +41,21 @@ allora usa il tool "search_single_word" per recuperare i "blocchi di testo".
 allora puoi usare "get_specific_chapter" per avere l'intero "capitolo" cioè un contesto più ampio dove cercre informazioni utili.
 5. Se vuoi informazioni e vuoi una risposta con un contesto più ampio attraverso una domanda, frase, descrizione 
 allora puoi usare "search_chapter" per avere un contesto piu' ampio.
-6. Combina queste strategie tra di loro per raggiungere il tuo obiettivo.
+6. Combina queste strategie tra di loro per raggiungere il tuo obiettivo.`
+	}
 
-## ESEMPIO 1
+	protected getOptions(): AgentFinderOptions {
+		return {
+			...super.getOptions(),
+			tools: this.getTools(),
+			paragraphLimit: 4,
+			captherLimit: 2,
+		}
+	}
+
+	protected getExamples(): string {
+		return `## ESEMPI
+### ESEMPIO 1
 - Hai una base dati di ricette di cucina.
 - Devi cercare tutte le ricette che contengono più ingredienti conosciuti, per esempio "zucchero" e "latte".
 - Cerca ogni singolo ingrediente come "parola" con "search_single_word" per ricavare i "blocchi di testo" che contengono quell'ingrediente.
@@ -72,43 +64,48 @@ allora puoi usare "search_chapter" per avere un contesto piu' ampio.
 - Se hai bisogno di un contesto più ampio puoi usare #ID_CHAPTER e "get_specific_chapter" per avere il "capitolo" completo.
 - Memorizza le ricette che contengono gli ingredienti cercati.
 
-## ESEMPIO 2
+### ESEMPIO 2
 - Hai una base dati di fornitori.
 - Devi conoscere tutti i paesi in cui operano dai fornitori. Per esempio per il fornitore "Datapizza".
 - Con "search_block_of_text" fai una domanda generica "Paesi serviti da Datapizza?"
 - Leggi i risultati e cerca di capire quali sono i paesi serviti.
 
-## ESEMPIO 3
+### ESEMPIO 3
 - Hai una base dati di romanzi.
 - Devi cercare un libro che parli di quando Jade per la prima volta è andata in India al prto di Mumbai.
 - Con "search_chapter" fai una domanda generica "Jade in India al porto di Mumbai"
 
-## ESEMPIO 4
+### ESEMPIO 4
 - Hai una base dati di history di chat.
 - Devi cercare cosa pensa Jade del repartlo vendite.
 - Con "search_block_of_text" fai la domanda "cosa pensa Jade del reparto vendite?"
 - Leggi i risultati e cerca di capire il significato.
 - Se hai bisogno di un contesto più ampio puoi usare "get_specific_chapter" per avere il "capitolo" completo.
 
-## ESEMPIO 5
+### ESEMPIO 5
 - Hai una base dati che riguarda la chimica.
 - Devi conoscere la lista delle reazioni trattate nell base dati.
 - Con "get_all_index" puoi ricavare una lista di "titoli" e con questi creare una lista delle sole reazioni chimiche.
 - Se un "titolo" è troppo generico puoi usare parte del "titolo" con i tools "search_single_word" o "search_block_of_text" o "search_chapter" per avere un contesto più ampio.
-`,
-			tools: this.getTools(),
-			paragraphLimit: 4,
-			captherLimit: 2,
-		}
+`
 	}
-	// 2. Se vuoi informazioni e la "query" è una frase generica, una domanda o una descrizione 
-	// allora usa il tool "search_block_of_text" per cercare "blocchi di testo" semanticamente simili alla "query" e per avere informazioni utili.
+
+	protected getContext(): string {
+		return `## TIENI CONTO CHE:
+1. Un "documento" è un insieme di "capitoli".
+2. Un "capitolo" è un testo abbastanza lungo che riguarda un argomento.
+3. Un "capitolo" è composto da più "blocchi di testo".
+4. Un "blocco di testo" è un testo breve di circa 300 lettere.
+5. Per le ricerce che restituiscono risultati semanticamente simili deve essere valutato il significato del testo.
+${super.getContext()}
+`
+	}
 
 	getTools(): ToolSet {
 
 		const search_chapter: Tool = tool({
-			description: `Attraverso la frase di "query" recupera dei "capitoli" 
-I "capitoli" sono un testo abbastanza lungo che riguarda un argomento. 
+			description: `Restituisce un limitatissimo numero di "capitoli" semanticamente simili alla "query".
+I "capitoli" sono un testo abbastanza lungo che riguarda un singolo argomento. 
 I "capitoli" sono composti da "blocchi di testo".
 `,
 			parameters: z.object({
@@ -128,7 +125,7 @@ I "capitoli" sono composti da "blocchi di testo".
 		})
 
 		const search_block_of_text: Tool = tool({
-			description: `Attraverso la frase di "query" recupera un breve "blocco di testo".
+			description: `Restituisce un limitato numero di "blocchi di testo" semanticamente simili alla "query".
 Da sapere: i "blocchi di testo" compongono un "capitolo".
 `,
 			parameters: z.object({
@@ -147,14 +144,16 @@ Da sapere: i "blocchi di testo" compongono un "capitolo".
 		})
 
 		const search_single_word: Tool = tool({
-			description: `Cerca puntualmente una singola parola o una frase 
-e restituisce il "blocco di testo" che la contiene.
+			description: `Restituisce una lista completa di tutti i "blochi di testo" che contengono esattamente una singola parola o frase.
+Tieni presente che:
+- Se la parola è una parola molto comune o generica restituirà troppi "blocchi di testo". Una strategia è di usare "search_block_of_text".
+- Se è una frase è molto specifica o lunga potrebbe non restituire il "blocco di testo" utile". Una strategia è di spezzare una frase troppo lunga
 `,
 			parameters: z.object({
-				query: z.string().describe("Il testo da cercare su tutti i 'blocchi di testo'"),
+				word: z.string().describe("La parola o frase da cercare su tutti i 'blocchi di testo'"),
 			}),
-			execute: async ({ query }) => {
-				const results: NodeDoc[] = await wordDBSearch(query, this.tableName, 100, DOC_TYPE.PARAGRAPH)
+			execute: async ({ word }) => {
+				const results: NodeDoc[] = await wordDBSearch(word, this.tableName, 100, DOC_TYPE.PARAGRAPH)
 				if (results.length == 0) return "Nessun risultato"
 				let response = ""
 				for (const result of results) {
@@ -165,9 +164,9 @@ e restituisce il "blocco di testo" che la contiene.
 		})
 
 		const get_specific_chapter: Tool = tool({
-			description: `Restituisce uno specifico capitolo cercando il suo ID.`,
+			description: `Restituisce uno specifico "capitolo" attraverso il suo ID.`,
 			parameters: z.object({
-				id: z.string().describe("l'id di tipo uuid del capitolo"),
+				id: z.string().describe("l'ID del capitolo"),
 			}),
 			execute: async ({ id }) => {
 				const result: NodeDoc = await getItemById(id, this.tableName)
@@ -178,7 +177,7 @@ e restituisce il "blocco di testo" che la contiene.
 
 		const get_all_index: Tool = tool({
 			description:
-				`Restituisce una lista dei documenti memorizzati e, per ogni documento, un indice dei titoli dei capitoli.`,
+				`Restituisce una lista di "titoli" o brevi descrizioni di tutti i "blocchi di testo" nei "capitoli" per ogni "documento".`,
 			parameters: z.object({}),
 			execute: async () => {
 				const docs = await getAllIndex(this.tableName)

@@ -7,7 +7,8 @@ export async function buildMenuAgent() {
 	const agent = new AgentFinder(
 		"MENU",
 		{
-			description: `Sei un agente che risponde a domande su: ristoranti, chef, ricette, ingredienti, skill, tecniche di preparazione
+			howAreYouPrompt: `Sei un agente che risponde a domande su: ristoranti, chef, ricette, ingredienti, skill, tecniche di preparazione.`,
+			contextPrompt: `Tieni presente che:
 - Ogni pianeta ha un ristorante
 - Ogni ristornate ha una descrizione
 - Ogni ristorante ha uno chef

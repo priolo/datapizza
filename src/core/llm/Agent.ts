@@ -25,9 +25,14 @@ export interface Response {
 
 export interface AgentOptions {
 	/** per descrivere l'AGENT nel tool */
-	description?: string
+	//description?: string
+
 	/** in aggiunta al system prompt ReAct */
-	systemPrompt?: string
+	//systemPrompt?: string
+	howAreYouPrompt?: string
+	contextPrompt?: string
+
+
 	tools?: ToolSet
 	agents?: Agent[]
 	/** distruggi history quando ha risposto */
@@ -78,7 +83,7 @@ class Agent {
 			agent.parent = this
 
 			acc[`chat_with_${agent.name}`] = tool({
-				description: `AGENT NAME: ${agent.name}. DESCRIPTION: ${agent.options.description}`,
+				description: `AGENT NAME: ${agent.name}.\nDESCRIPTION: ${agent.options.howAreYouPrompt ?? ""}\n${agent.options.contextPrompt ?? ""}`,
 				parameters: z.object({
 					prompt: z.string().describe("The question to ask the agent"),
 				}),
@@ -104,27 +109,21 @@ class Agent {
 	async ask(prompt: string): Promise<Response> {
 		const systemTools = this.getSystemTools()
 		const tools = { ...this.options.tools, ...this.subagentTools, ...systemTools }
-		const reactSystemPrompt = this.getReactSystemPrompt()
-		let systemPrompt = `${reactSystemPrompt ?? ""}\n${this.options.systemPrompt ?? ""}`
+		const systemPrompt = this.getReactSystemPrompt()
 
 		// inserisco un prompt di initializzazione per l'AGENT
 		if (this.history.length == 0) {
 			this.history = [{
 				role: "user",
-				content: `Please solve the following problem using reasoning and the available tools:`
+				content: `${this.getContext()}
+
+Please solve the following problem using reasoning and the available tools:`
 			}]
 		}
 		this.history.push({ role: "user", content: `${prompt}` })
 
 		// LOOP
 		for (let i = 0; i < this.options.maxCycles; i++) {
-
-			// if (i == this.options.maxCycles - 3) {
-			// 	this.history.push({
-			// 		role: "assistant",
-			// 		content: "You need to find an answer quickly because your time is running out.",
-			// 	})
-			// }
 
 			// THINK
 			const r = await generateText({
@@ -172,7 +171,7 @@ class Agent {
 				if (functionName != "update_strategy" && !functionName.startsWith("chat_with_")) {
 					const funArgs = this.history[this.history.length - 2]?.content[1]?.["args"]
 					colorPrint([this.name, ColorType.Blue], " : function : ", [functionName, ColorType.Yellow], " : ", [JSON.stringify(funArgs), ColorType.Green])
-					//console.log(result)
+					console.log(result)
 				}
 
 				// CONTINUE RAESONING
@@ -195,12 +194,13 @@ class Agent {
 	kill() {
 		this.history = []
 		colorPrint(this.name, ColorType.Blue, " : ", ["killed", ColorType.Red])
+		this.options.agents.forEach(agent => agent.kill())
 	}
 
 	protected getOptions(): AgentOptions {
 		return {
-			description: "",
-			systemPrompt: "",
+			howAreYouPrompt: "",
+			contextPrompt: "",
 			tools: {},
 			agents: [],
 			clearOnResponse: false,
@@ -208,8 +208,26 @@ class Agent {
 		}
 	}
 
+
 	/** System instructions for ReAct agent  */
 	protected getReactSystemPrompt(): string {
+		const process = `# You are a ReAct agent that solves problems by thinking step by step.
+## Strategy:
+- Keep the focus on the main problem and the tools at your disposal
+- Break the main problem into smaller problems (steps)
+- The steps are designed to minimize the text used.
+- Create a list of steps to follow to solve the main problem call the tool "update_strategy"
+- Each step is independent from the following ones
+- Each step could be dependent on the previous ones
+${this.getRules()}
+${this.getStrategyTools()}
+${this.getExamples()}
+Always be explicit in your reasoning. Break down complex problems into steps.
+`;
+		return process
+	}
+
+	protected getRules(): string {
 		const rules = []
 
 		rules.push(`Thought: Analyze the step problem and think about how to solve it.`)
@@ -233,23 +251,21 @@ If you have not succeeded, try updating the strategy list by returning to the pr
 		// conclusion
 		rules.push(`When ready, use the "final_answer" tool to provide your solution.`)
 
-		const process = `# You are a ReAct agent that solves problems by thinking step by step.
-## Strategy:
-- Keep the focus on the main problem and the tools at your disposal
-- Break the main problem into smaller problems (steps)
-- The steps are designed to minimize the text used.
-- Create a list of steps to follow to solve the main problem call the tool "update_strategy"
-- Each step is independent from the following ones
-- Each step could be dependent on the previous ones
-
-## Follow this rules:
+		return `## Follow this rules:
 ${rules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
+`
+	}
 
-Always be explicit in your reasoning. Break down complex problems into steps.
-`;
+	protected getExamples(): string {
+		return ""
+	}
 
+	protected getStrategyTools(): string {
+		return ""
+	}
 
-		return process
+	protected getContext(): string {
+		return this.options.contextPrompt ?? ""
 	}
 
 	protected getSystemTools(): ToolSet {
@@ -284,7 +300,7 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 					strategy: z.string().describe("the strategy divided into a list of steps"),
 				}),
 				execute: async ({ strategy }) => {
-					colorPrint([this.name, ColorType.Blue], " : update strategy", ["\n"+strategy, ColorType.Magenta])
+					colorPrint([this.name, ColorType.Blue], " : update strategy", ["\n" + strategy, ColorType.Magenta])
 					return strategy
 				}
 			}),

@@ -5,9 +5,9 @@ import AgentFinder from "../../core/llm/AgentFinder.js"
 export async function buildCodiceAgent() {
 	const agent = new AgentFinder(
 		"CODICE",
-		{ 
-			description: `Sei un agente che risponde a domande sul Codice Galattico.
-sono regole per la sucurezza alimentare che riguardano:
+		{
+			howAreYouPrompt: `Sei un agente che risponde a domande sul Codice Galattico.`,
+			contextPrompt: `Il Codice Galattico contiene regole per la sucurezza alimentare che riguardano:
 - Ordini
 - Sostanze regolamentate
 - Licenze e Tecniche di Preparazione 

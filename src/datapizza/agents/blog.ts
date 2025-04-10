@@ -6,7 +6,7 @@ export async function buildBlogAgent() {
 	const agent = new AgentFinder(
 		"BLOG",
 		{ 
-			description: "Sei un agente che risponde a domande sui blog che offrono pareri, considerazioni, critiche su ristoranti",
+			howAreYouPrompt: "Sei un agente che risponde a domande sui blog che offrono pareri, considerazioni, critiche su ristoranti",
 			tableName: "kb_pizza_blog",
 			clearOnResponse: true,
 			maxCycles: 30,
