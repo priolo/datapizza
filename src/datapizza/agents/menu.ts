@@ -1,5 +1,5 @@
 import AgentFinder from "../../core/llm/AgentFinder.js"
-import { get_dish_list, get_location_list, get_locations_distance } from "./tools.js"
+import { get_recipes_list, get_resturants_list, get_resturants_distance } from "./tools.js"
 
 
 
@@ -18,8 +18,8 @@ export async function buildMenuAgent() {
 `,
 			tableName: "kb_pizza_menu",
 			tools: {
-				"get_locations_list": get_location_list,
-				"get_dish_list": get_dish_list,
+				"get_locations_list": get_resturants_list,
+				"get_recipes_list": get_recipes_list,
 			},
 			clearOnResponse: true,
 			maxCycles: 30,

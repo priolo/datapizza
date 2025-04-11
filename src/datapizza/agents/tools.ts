@@ -3,7 +3,7 @@ import { z } from "zod"
 
 
 
-export const get_location_list = tool({
+export const get_resturants_list = tool({
 	description: "Restituisce la lista di tutti i ritoranti disponibili",
 	parameters: z.object({}),
 	execute: async () => {
@@ -11,7 +11,7 @@ export const get_location_list = tool({
 	}
 })
 
-export const get_locations_distance = tool({
+export const get_resturants_distance = tool({
 	description: "Restituisce la distanza tra due ristoranti in anni luce",
 	parameters: z.object({
 		partenza: z.string().describe("Il nome del ristorante partenza"),
@@ -40,18 +40,18 @@ export const get_locations_distance = tool({
 	}
 })
 
-export const get_dish_list = tool({
+export const get_recipes_list = tool({
 	description: "Restituisce una lista di tutte le ricette disponibili",
 	parameters: z.object({}),
 	execute: async () => {
-		return Object.keys(Dishes).join(", ");
+		return Object.keys(Recipes).join(", ");
 	}
 })
 
 
 export const Locations = ["Tatooine", "Asgard", "Namecc", "Arrakis", "Krypton", "Pandora", "Cybertron", "Ego", "Montressosr", "Klyntar"]
 
-export const Dishes = {
+export const Recipes = {
 	"Alternate Realities Risotto": 0,
 	"Antipasto Celestiale": 1,
 	"Antipasto Stellare dell'Eterna Armonia": 2,

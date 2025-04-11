@@ -2,7 +2,7 @@ import Agent, { AgentOptions } from "../../core/llm/Agent.js"
 import { buildCodiceAgent } from "./codice.js"
 import { buildManualeAgent } from "./manuale.js"
 import { buildMenuAgent } from "./menu.js"
-import { Dishes, get_dish_list, get_location_list, get_locations_distance } from "./tools.js"
+import { Recipes, get_recipes_list, get_resturants_list, get_resturants_distance } from "./tools.js"
 
 
 
@@ -31,8 +31,8 @@ ${/*finalAswer*/""}
             noAskForInformation: true,
             agents: [codiceAgent, manualeAgent, menuAgent],
             tools: {
-                "get_locations_list": get_location_list,
-                "get_locations_distance": get_locations_distance,
+                "get_locations_list": get_resturants_list,
+                "get_locations_distance": get_resturants_distance,
                 //"get_dish_list": get_dish_list,
                 // "get_recipe_index": {
                 //     description: `Restituisce un numero univoco che codifica la ricetta. Utile per la risposta finale.`, 
@@ -56,4 +56,4 @@ const finalAswer = `## SOLO PER LA RISPOSTA FINALE
 - Una volta ottenuta la ricetta o le ricette bisogna codificare il nome di ogni ricetta nel suo INDICE coorrispondente.
 - E quindi poi restituire all'utente solamente la lista di INDICI separati da virgole.
 - La relazione per convertire una ricett nel suo corrispettivo INDICE da usare come risposta finale è:
-${Object.entries(Dishes).map(([name, id]) => `${id}: ${name}`).join(", ")}`
+${Object.entries(Recipes).map(([name, id]) => `${id}: ${name}`).join(", ")}`
