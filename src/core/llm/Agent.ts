@@ -83,7 +83,7 @@ class Agent {
 			agent.parent = this
 
 			acc[`chat_with_${agent.name}`] = tool({
-				description: `AGENT NAME: ${agent.name}.\nDESCRIPTION: ${agent.options.howAreYouPrompt ?? ""}\n${agent.options.contextPrompt ?? ""}`,
+				description: `Ask agent ${agent.name} for info.\nWho are you?: ${agent.options.howAreYouPrompt ?? ""}\n${agent.options.contextPrompt ?? ""}`,
 				parameters: z.object({
 					prompt: z.string().describe("The question to ask the agent"),
 				}),
@@ -212,13 +212,13 @@ Please solve the following problem using reasoning and the available tools:`
 	/** System instructions for ReAct agent  */
 	protected getReactSystemPrompt(): string {
 		const process = `# You are a ReAct agent that solves problems by thinking step by step.
+
 ## Strategy:
 - Keep the focus on the main problem and the tools at your disposal
 - Break the main problem into smaller problems (steps)
-- The steps are designed to minimize the text used.
+- The steps are designed to minimize the tools used.
 - Create a list of steps to follow to solve the main problem call the tool "update_strategy"
-- Each step is independent from the following ones
-- Each step could be dependent on the previous ones
+
 ${this.getRules()}
 ${this.getStrategyTools()}
 ${this.getExamples()}

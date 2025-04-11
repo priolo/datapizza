@@ -7,7 +7,7 @@ export async function buildManualeAgent() {
 		"MANUALE",
 		{
 			howAreYouPrompt: `Sei un agente che risponde a domande sul Manuale di Cucina dello chef Sirius Cosmo`,
-			contextPrompt: `Il Manuale di Cucina contiene informazioni su:
+			contextPrompt: `## Il Manuale di Cucina contiene informazioni su:
 1) Abilità e licenze.
 Una serie di abilità e licenze che ogni chef può avere.
 Ogni abilità ha:

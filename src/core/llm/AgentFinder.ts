@@ -1,7 +1,7 @@
-import { tool, Tool, ToolExecutionOptions, ToolSet } from 'ai';
+import { tool, Tool, ToolSet } from 'ai';
 import { z } from "zod";
-import { getAllIndex, getItemById, vectorDBSearch, wordDBSearch } from '../db.js';
 import { DOC_TYPE, NodeDoc } from '../../types.js';
+import { getAllIndex, getItemById, vectorDBSearch, wordDBSearch } from '../db.js';
 import Agent, { AgentOptions } from './Agent.js';
 
 
@@ -30,18 +30,21 @@ class AgentFinder extends Agent {
 	tableName: string
 
 	protected getStrategyTools(): string {
-		return `## Strategy for using tools 
-1. Se vuoi avere la lista dei "titoli" degli argomenti conosciuti 
-allora puoi usare "get_all_index" per avere un indice generico di tutti i "blocchi di testo" nei "capitoli" nei "documenti".
-2. Se vuoi informazioni attrverso una domanda, descrizione o frase generica che restituisca "blocchi di testo" semanticamente simili
-allora usa il tool "search_block_of_text" per cercare "blocchi di testo" semanticamente simili alla "query" e per avere informazioni utili.
-3. In alcuni casi è utile cercare direttamente una parola o frase precisa per ricavare tutti i "blocchi di testo" che la contengono (come per esempio un nome, un soggetto, un argomento, un concetto, etc) 
-allora usa il tool "search_single_word" per recuperare i "blocchi di testo". 
-4. Se vuoi informazioni più ampie su un "blocco di testo" e conosci #ID_CHAPTER da dove è stato estratto
-allora puoi usare "get_specific_chapter" per avere l'intero "capitolo" cioè un contesto più ampio dove cercre informazioni utili.
-5. Se vuoi informazioni e vuoi una risposta con un contesto più ampio attraverso una domanda, frase, descrizione 
-allora puoi usare "search_chapter" per avere un contesto piu' ampio.
-6. Combina queste strategie tra di loro per raggiungere il tuo obiettivo.`
+//		return ""
+		return `## Strategia per usare i tools di ricerca
+1. Se hai una parola o frase precisa (per esempio un nome, un soggetto, un argomento, un concetto, etc)
+e la vuoi cercare su tutto il "documento" allora usa il tool "search_single_word" per recuperare i "blocchi di testo" che contengono quela parola o frase. 
+2. Se vuoi "blocchi di testo" attraverso una domanda, descrizione o frase generica
+allora usa il tool "search_block_of_text" per cercare "blocchi di testo" semanticamente simili alla "query".
+3. Se vuoi subito informazioni generali attraverso una domanda, frase, descrizione 
+allora usa "search_chapter" per recuperare una serie di "capitoli" semanticamente simili alla "query".
+4. Se hai #ID_CHAPTER e vuoi accedere ad un contesto piu' ampio 
+allora usa "get_specific_chapter" per ricevere lo specifico "capitolo" attraverso il suo ID.
+5. Se vuoi avere la lista dei "titoli" degli argomenti conosciuti 
+allora usa "get_all_index" per avere un indice generico di tutti i "blocchi di testo" nei "capitoli" nei "documenti".
+- Usa lo stesso linguaggio dei "documenti" per le query.
+- Combina queste strategie tra di loro per raggiungere il tuo obiettivo.
+`
 	}
 
 	protected getOptions(): AgentFinderOptions {
@@ -97,6 +100,7 @@ allora puoi usare "search_chapter" per avere un contesto piu' ampio.
 3. Un "capitolo" è composto da più "blocchi di testo".
 4. Un "blocco di testo" è un testo breve di circa 300 lettere.
 5. Per le ricerce che restituiscono risultati semanticamente simili deve essere valutato il significato del testo.
+
 ${super.getContext()}
 `
 	}
@@ -194,7 +198,7 @@ Tieni presente che:
 			}
 		})
 
-		return { search_chapter, search_block_of_text, search_single_word, get_specific_chapter, get_all_index }
+		return { search_chapter, search_block_of_text, search_single_word, get_specific_chapter, /*get_all_index*/ }
 	}
 }
 

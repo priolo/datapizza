@@ -7,18 +7,15 @@ export async function buildMenuAgent() {
 	const agent = new AgentFinder(
 		"MENU",
 		{
-			howAreYouPrompt: `Sei un agente che risponde a domande su: ristoranti, chef, ricette, ingredienti, skill, tecniche di preparazione.`,
-			contextPrompt: `Tieni presente che:
-- Ogni pianeta ha un ristorante
-- Ogni ristornate ha una descrizione
+			howAreYouPrompt: `Sei un agente che risponde a domande principalmente ricette, ingredienti, tecniche di preparazione, ristoranti, chef, skill.`,
+			contextPrompt: `## Tieni presente che:
+- Ogni ricetta ha una lista di ingredienti
+- Se hai un ingrediente e vuoi il nome della sua ricetta devi cercare il contesto superiore (capitolo)
+- Ogni ricetta ha una tecnica di preparazione
+- Ogni ristorante ha una serie di ricette
 - Ogni ristorante ha uno chef
 - Ogni chef ha delle abilità e licenze
-- Ogni ristorante ha un menu
-- Ogni menu ha una serie di ricette
-- Ogni ricetta ha una descrizione
-- Ogni ricetta ha una tecnica di preparazione
-- Ogni ricetta ha una lista di ingredienti
-	`,
+`,
 			tableName: "kb_pizza_menu",
 			tools: {
 				"get_locations_list": get_location_list,

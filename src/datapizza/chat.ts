@@ -1,5 +1,6 @@
 import readline from 'readline';
 import { buildLeadAgent } from "./agents/leader.js";
+import { getItemById, vectorDBSearch } from '../core/db.js';
 
 
 
@@ -24,4 +25,17 @@ export async function chat() {
 	// }
 }
 
-chat()
+//chat()
+
+async function run () {
+	const pars = await vectorDBSearch("Marinatura Temporale Sincronizzata", "kb_pizza_menu", 3)
+	const chaps = []
+	for ( const p of pars) {
+		chaps.push ( await getItemById(p.parent, "kb_pizza_menu") )
+	}
+
+	console.log( "CHAPS", chaps)
+
+} 
+run()
+

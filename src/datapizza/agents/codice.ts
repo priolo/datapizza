@@ -7,7 +7,7 @@ export async function buildCodiceAgent() {
 		"CODICE",
 		{
 			howAreYouPrompt: `Sei un agente che risponde a domande sul Codice Galattico.`,
-			contextPrompt: `Il Codice Galattico contiene regole per la sucurezza alimentare che riguardano:
+			contextPrompt: `## Il Codice Galattico contiene regole per la sucurezza alimentare che riguardano:
 - Ordini
 - Sostanze regolamentate
 - Licenze e Tecniche di Preparazione 

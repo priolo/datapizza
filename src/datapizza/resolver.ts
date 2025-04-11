@@ -52,20 +52,20 @@ export async function loadCsvFileAsync(
 
 
 async function run() {
-	const absolutePath = path.resolve(__dirname, '../../data/pizza/domande.csv')
-	const data = await loadCsvFileAsync(absolutePath, {
-		hasHeader: true,
-		encoding: 'utf-8',
-		skipEmptyLines: true,
-	})
-	const leadAgent = await buildLeadAgent()
+	// const absolutePath = path.resolve(__dirname, '../../data/pizza/domande.csv')
+	// const data = await loadCsvFileAsync(absolutePath, {
+	// 	hasHeader: true,
+	// 	encoding: 'utf-8',
+	// 	skipEmptyLines: true,
+	// })
+	// const request = data[8]
+	const request = "Quali piatti sono preparati con la Marinatura Temporale Sincronizzata"
 
-	const request = data[8]
+	const leadAgent = await buildLeadAgent()
 	colorPrint(["REQUEST :", ColorType.Cyan], request)
 	const result = await leadAgent.ask(request)
 	colorPrint(["RESPONSE :", ColorType.Cyan], result.text)
 	leadAgent.kill()
-
 
 	// for (let i = 0; i < data.length; i++) {
 	// 	const query = data[i]
