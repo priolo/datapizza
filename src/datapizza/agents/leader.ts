@@ -14,7 +14,7 @@ export async function buildLeadAgent() {
     const leaderAgent = new Agent(
         "LEADER",
         <AgentOptions>{
-            howAreYouPrompt: `Sei un Agente che risponde a domande su un mondo immaginario fantascientifico fatto di ricette, ristoranti, chef, preparazoni, ingredienti, licenze, norme pianeti galassie e popolazioni fantastiche.`,
+            descriptionPrompt: `Agente che risponde a domande su un mondo immaginario fantascientifico fatto di ricette, ristoranti, chef, preparazoni, ingredienti, licenze, norme pianeti galassie e popolazioni fantastiche.`,
             contextPrompt: `## Tieni presente che:
 - Ogni pianeta ha un ristorante
 - Ogni ristorante ha una seie di ricette
@@ -26,7 +26,7 @@ export async function buildLeadAgent() {
 ## STRATEGIA:
 - Usa i tuoi tools per trovare le informazioni e rispondere alla domanda dell'utente.
 
-${/*finalAswer*/""}
+${finalAswer}
 `,
             noAskForInformation: true,
             agents: [codiceAgent, manualeAgent, menuAgent],

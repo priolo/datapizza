@@ -29,7 +29,7 @@ export interface AgentOptions {
 
 	/** in aggiunta al system prompt ReAct */
 	//systemPrompt?: string
-	howAreYouPrompt?: string
+	descriptionPrompt?: string
 	contextPrompt?: string
 
 
@@ -83,7 +83,7 @@ class Agent {
 			agent.parent = this
 
 			acc[`chat_with_${agent.name}`] = tool({
-				description: `Ask agent ${agent.name} for info.\nWho are you?: ${agent.options.howAreYouPrompt ?? ""}\n${agent.options.contextPrompt ?? ""}`,
+				description: `Ask agent ${agent.name} for info.\n${agent.options.descriptionPrompt ?? ""}\n${agent.options.contextPrompt ?? ""}`,
 				parameters: z.object({
 					prompt: z.string().describe("The question to ask the agent"),
 				}),
@@ -109,17 +109,17 @@ class Agent {
 	async ask(prompt: string): Promise<Response> {
 		const systemTools = this.getSystemTools()
 		const tools = { ...this.options.tools, ...this.subagentTools, ...systemTools }
-		const systemPrompt = this.getReactSystemPrompt()
-
+		const systemPrompt = this.getReactSystemPrompt() + "\n\n" +  this.getContext()
+		
 		// inserisco un prompt di initializzazione per l'AGENT
-		if (this.history.length == 0) {
-			this.history = [{
-				role: "user",
-				content: `${this.getContext()}
+// 		if (this.history.length == 0) {
+// 			this.history = [{
+// 				role: "user",
+// 				content: `
 
-Please solve the following problem using reasoning and the available tools:`
-			}]
-		}
+// Please solve the following problem using reasoning and the available tools:`
+// 			}]
+// 		}
 		this.history.push({ role: "user", content: `${prompt}` })
 
 		// LOOP
@@ -199,7 +199,7 @@ Please solve the following problem using reasoning and the available tools:`
 
 	protected getOptions(): AgentOptions {
 		return {
-			howAreYouPrompt: "",
+			descriptionPrompt: "",
 			contextPrompt: "",
 			tools: {},
 			agents: [],
@@ -232,7 +232,7 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 
 		rules.push(`Thought: Analyze the step problem and think about how to solve it.`)
 
-		rules.push(`Action: Choose an action from the available tools or call another agent using the tool "chat_with_<agent_name>"`)
+		rules.push(`Action: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
 
 		// pre osservation
 		if (!this.options.noAskForInformation) rules.push(`Request information: If you really can't get information from others tools call "ask_for_information" tools to ask for more information.`)

@@ -52,14 +52,14 @@ export async function loadCsvFileAsync(
 
 
 async function run() {
-	// const absolutePath = path.resolve(__dirname, '../../data/pizza/domande.csv')
-	// const data = await loadCsvFileAsync(absolutePath, {
-	// 	hasHeader: true,
-	// 	encoding: 'utf-8',
-	// 	skipEmptyLines: true,
-	// })
-	// const request = data[8]
-	const request = "Quali piatti sono preparati con la Marinatura Temporale Sincronizzata"
+	const absolutePath = path.resolve(__dirname, '../../data/pizza/domande.csv')
+	const data = await loadCsvFileAsync(absolutePath, {
+		hasHeader: true,
+		encoding: 'utf-8',
+		skipEmptyLines: true,
+	})
+	const request = data[8]
+	//const request = "Quali piatti sono preparati con la Marinatura Temporale Sincronizzata"
 
 	const leadAgent = await buildLeadAgent()
 	colorPrint(["REQUEST :", ColorType.Cyan], request)
