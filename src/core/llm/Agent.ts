@@ -105,19 +105,19 @@ class Agent {
 	async ask(prompt: string): Promise<Response> {
 		const systemTools = this.getSystemTools()
 		const tools = { ...this.options.tools, ...this.subagentTools, ...systemTools }
-		const systemPrompt = this.getReactSystemPrompt() + "\n\n" +  this.getContext()
-		
-		// inserisco un prompt di initializzazione per l'AGENT
-// 		if (this.history.length == 0) {
-// 			this.history = [{
-// 				role: "user",
-// 				content: `
+		const systemPrompt = this.getReactSystemPrompt()
 
-// Please solve the following problem using reasoning and the available tools:`
-// 			}]
-// 		}
-		if ( this.history.length == 0) {
-			prompt = this.getContext() + "\n\n" + prompt
+		// inserisco un prompt di initializzazione per l'AGENT
+		// 		if (this.history.length == 0) {
+		// 			this.history = [{
+		// 				role: "user",
+		// 				content: `
+
+		// Please solve the following problem using reasoning and the available tools:`
+		// 			}]
+		// 		}
+		if (this.history.length == 0) {
+			prompt = this.getContextPrompt() + "\n\nPlease solve the following problem using reasoning and the available tools:\n" + prompt
 		}
 		this.history.push({ role: "user", content: `${prompt}` })
 
@@ -184,7 +184,7 @@ class Agent {
 		colorPrint(this.name, ColorType.Blue, " : ", ["failure", ColorType.Red])
 		if (this.options.clearOnResponse) this.kill()
 		return {
-			text: "Couldn't reach a conclusion after maximum iterations.",
+			text: "I can't answer because the question is too complex.",
 			type: RESPONSE_TYPE.FAILURE
 		}
 	}
@@ -205,66 +205,6 @@ class Agent {
 			clearOnResponse: false,
 			maxCycles: 30,
 		}
-	}
-
-
-	/** System instructions for ReAct agent  */
-	protected getReactSystemPrompt(): string {
-		const process = `# You are a ReAct agent that solves problems by thinking step by step.
-
-## Strategy:
-- Keep the focus on the main problem and the tools at your disposal
-- Break the main problem into smaller problems (steps)
-- Create a list of steps to follow to solve the main problem call the tool "update_strategy"
-- The steps are designed to minimize the tools used.
-
-${this.getRules()}
-${this.getStrategyTools()}
-${this.getExamples()}
-Always be explicit in your reasoning. Break down complex problems into steps.
-`;
-		return process
-	}
-
-	protected getRules(): string {
-		const rules = []
-
-		rules.push(`Thought: Analyze the step problem and think about how to solve it.`)
-
-		rules.push(`Action: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
-
-		// pre osservation
-		if (!this.options.noAskForInformation) rules.push(`Request information: If you really can't get information from others tools call "ask_for_information" tools to ask for more information.`)
-
-		// observation
-		rules.push(`Observation: Get the result of the tool and use it to process the answer`)
-
-		// update strategy
-// 		rules.push(`Update the strategy:
-// If you have completed the step examined, move on to the next one.
-// If you have not succeeded, try updating the strategy list by returning to the previous steps and trying again. call the tool "update_strategy"`)
-
-		// post osservation
-		rules.push(`Repeat rules 1-${rules.length} until you can provide a final answer`)
-
-		// conclusion
-		rules.push(`When ready, use the "final_answer" tool to provide your solution.`)
-
-		return `## Follow this rules:
-${rules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
-`
-	}
-
-	protected getExamples(): string {
-		return ""
-	}
-
-	protected getStrategyTools(): string {
-		return ""
-	}
-
-	protected getContext(): string {
-		return this.options.contextPrompt ?? ""
 	}
 
 	protected getSystemTools(): ToolSet {
@@ -307,6 +247,65 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 		if (!!this.options.noAskForInformation) delete tools.ask_for_information
 		return tools
 	}
+
+
+	// PROMPTS
+
+	//#region SYSTEM PROMPT
+
+	/** System instructions for ReAct agent  */
+	protected getReactSystemPrompt(): string {
+		const process = `# You are a ReAct agent that solves problems by thinking step by step.
+
+## MAIN STRATEGY:
+- Keep the focus on the main problem and the tools at your disposal
+- Break the main problem into smaller problems (steps)
+- Create a list of steps to follow to solve the main problem call the tool "update_strategy"
+- The steps are designed to minimize the tools used.
+
+${this.getRulesPrompt()}
+
+Always be explicit in your reasoning. Break down complex problems into steps.
+`;
+		return process
+	}
+
+
+	protected getRulesPrompt(): string {
+		const rules = []
+
+		rules.push(`Thought: Analyze the step problem and think about how to solve it.`)
+
+		rules.push(`Action: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
+
+		// pre osservation
+		if (!this.options.noAskForInformation) rules.push(`Request information: If you really can't get information from others tools call "ask_for_information" tools to ask for more information.`)
+
+		// observation
+		rules.push(`Observation: Get the result of the tool and use it to process the answer`)
+
+		// update strategy
+		// 		rules.push(`Update the strategy:
+		// If you have completed the step examined, move on to the next one.
+		// If you have not succeeded, try updating the strategy list by returning to the previous steps and trying again. call the tool "update_strategy"`)
+
+		// post osservation
+		rules.push(`Repeat rules 1-${rules.length} until you can provide a final answer`)
+
+		// conclusion
+		rules.push(`When ready, use the "final_answer" tool to provide your solution.`)
+
+		return `## FOLLOW THIS RULES:
+${rules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
+`
+	}
+
+	//#endregion SYSTEM PROMPT
+
+	protected getContextPrompt(): string {
+		return this.options.contextPrompt ?? ""
+	}
+
 }
 
 export default Agent

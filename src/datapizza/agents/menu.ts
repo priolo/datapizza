@@ -60,7 +60,7 @@ export async function buildIngPreAgent() {
 }
 
 
-export async function buildRecipeAget() {
+export async function buildRecipeAgent() {
 	const agent = new AgentFinder(
 		"RICETTA",
 		{
@@ -71,9 +71,9 @@ export async function buildRecipeAget() {
 - Ogni ricetta ha una lista di tecniche di preparazione
 
 ## STRATEGIA
-1. cerca i blocchi di testo con il nome della ricetta (preiligi la ricerca "search_single_word")
-2. cerca di capire se hai abbastanza contesto per trovare le tue informazioni
-3. se non hai abbastanza contesto cerca i capitoli corrispondenti tramite #ID_CHAPTER che hai a disposizione
+1. Cerca i blocchi di testo con il nome della ricetta (preiligi la ricerca "search_single_word")
+2. Cerca di capire se hai abbastanza contesto per trovare le tue informazioni
+3. Ce non hai abbastanza contesto cerca i capitoli corrispondenti tramite #ID_CHAPTER che hai a disposizione
 `,
 			tableName: "kb_pizza_menu",
 			clearOnResponse: true,

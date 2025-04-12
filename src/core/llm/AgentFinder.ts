@@ -29,40 +29,17 @@ class AgentFinder extends Agent {
 	refs: string[] = []
 	tableName: string
 
-	protected getStrategyTools(): string {
-		return `## PLEASE NOTE THAT:
+	protected getReactSystemPrompt(): string {
+		const prompt = `
+## CONTEXT FOR SEARCH TOOLS
 1. A "document" is a set of "chapters".
 2. A "chapter" is a fairly long text that covers a single topic.
 3. A "chapter" is composed of multiple "blocks of text".
 4. A "block of text" is a short text of about 300 letters.
 5. For searches that return semantically similar results, the meaning of the text must be evaluated.
 `
-// 		return `## Strategy for using search tools
-// 1. If you have a specific word or phrase (for example a name, a subject, a topic, a concept, etc)
-// and you want to search for it on the whole "document" then use the tool "search_single_word" to retrieve the "blocks of text" that contain that word or phrase.
-// 2. If you want "blocks of text" through a question, description or generic phrase
-// then use the tool "search_block_of_text" to search for "blocks of text" semantically similar to the "query".
-// 3. If you have #ID_CHAPTERs and want to access a broader context, 
-// use "get_specific_chapters" to get the specific "chapters" via a list of IDs.
-// 4. If you want general information immediately through a question, phrase, description
-// then use "search_chapter" to retrieve a series of "chapters" semantically similar to the "query".
-// - Combine these strategies together to achieve your goal.
-// `
-	}
-	// 5. If you want to have the list of "titles" of the known topics
-	// then use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
-	
-	protected getOptions(): AgentFinderOptions {
-		return {
-			...super.getOptions(),
-			tools: this.getTools(),
-			paragraphLimit: 30,
-			captherLimit: 10,
-		}
-	}
-
-	protected getExamples(): string {
-		return `## EXAMPLES
+		const examplesPrompt = `
+## EXAMPLES FOR SEARCH TOOLS
 ### EXAMPLE 1
 - You have a database of cooking recipes.
 - You need to search for all recipes that contain multiple known ingredients, for example "sugar" and "milk".
@@ -90,25 +67,41 @@ class AgentFinder extends Agent {
 - Read the results and try to understand the meaning.
 - If you need more context you can use "get_specific_chapters" to get all the complete "chapters".
 
-${true?"":`### EXAMPLE 5
+${true ? "" : `### EXAMPLE 5
 - You have a database about chemistry.
 - You need to know the list of reactions treated in the database.
 - With "get_all_index" you can get a list of "titles" and with these create a list of chemical reactions only.
 - If a "title" is too generic you can use part of the "title" with the tools "search_single_word" or "search_block_of_text" or "search_chapter" to have a broader context.`}
 `
+
+		// 		return `## Strategy for using search tools
+		// 1. If you have a specific word or phrase (for example a name, a subject, a topic, a concept, etc)
+		// and you want to search for it on the whole "document" then use the tool "search_single_word" to retrieve the "blocks of text" that contain that word or phrase.
+		// 2. If you want "blocks of text" through a question, description or generic phrase
+		// then use the tool "search_block_of_text" to search for "blocks of text" semantically similar to the "query".
+		// 3. If you have #ID_CHAPTERs and want to access a broader context, 
+		// use "get_specific_chapters" to get the specific "chapters" via a list of IDs.
+		// 4. If you want general information immediately through a question, phrase, description
+		// then use "search_chapter" to retrieve a series of "chapters" semantically similar to the "query".
+		// - Combine these strategies together to achieve your goal.
+		// `
+
+		return super.getReactSystemPrompt() + prompt + examplesPrompt
 	}
+	// 5. If you want to have the list of "titles" of the known topics
+	// then use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
 
-// 	protected getContext(): string {
-// 		return `## PLEASE NOTE THAT:
-// 1. A "document" is a set of "chapters".
-// 2. A "chapter" is a fairly long text that covers a single topic.
-// 3. A "chapter" is composed of multiple "blocks of text".
-// 4. A "block of text" is a short text of about 300 letters.
-// 5. For searches that return semantically similar results, the meaning of the text must be evaluated.
 
-// ${super.getContext()}
-// `
-// 	}
+
+
+	protected getOptions(): AgentFinderOptions {
+		return {
+			...super.getOptions(),
+			tools: this.getTools(),
+			paragraphLimit: 30,
+			captherLimit: 10,
+		}
+	}
 
 	getTools(): ToolSet {
 
@@ -179,11 +172,11 @@ Keep in mind that:
 			}),
 			execute: async ({ ids }) => {
 				if (!ids || ids.length == 0) return "No results"
-				const results:NodeDoc[] = []
-				for ( const id of ids) {
-					results.push( await getItemById(id, this.tableName))
+				const results: NodeDoc[] = []
+				for (const id of ids) {
+					results.push(await getItemById(id, this.tableName))
 				}
-				if (results.length == 0 ) return "No results"
+				if (results.length == 0) return "No results"
 				return results.map(result => nodeToString(result)).join("")
 			}
 		})

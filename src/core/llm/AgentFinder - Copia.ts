@@ -29,7 +29,7 @@ class AgentFinder extends Agent {
 	refs: string[] = []
 	tableName: string
 
-	protected getStrategyTools(): string {
+	protected getStrategyToolsPrompt(): string {
 		return `## Strategy for using tools
 1. In some cases it is useful to directly search for a specific word or phrase to obtain all the "text blocks" that contain it (such as a name, a subject, a topic, a concept, etc)
 then use the "search_single_word" tool to retrieve the "text blocks".
@@ -53,7 +53,7 @@ then you can use "get_all_index" to have a generic index of all "text blocks" in
 		}
 	}
 
-	protected getExamples(): string {
+	protected getExamplesPrompt(): string {
 		return `## EXAMPLES
 ### EXAMPLE 1
 - You have a database of cooking recipes.
@@ -90,14 +90,14 @@ then you can use "get_all_index" to have a generic index of all "text blocks" in
 `
 	}
 
-	protected getContext(): string {
+	protected getContextPrompt(): string {
 		return `## PLEASE NOTE THAT:
 1. A "document" is a set of "chapters".
 2. A "chapter" is a fairly long text that covers a topic.
 3. A "chapter" is composed of multiple "blocks of text".
 4. A "block of text" is a short text of about 300 letters.
 5. For searches that return semantically similar results, the meaning of the text must be evaluated.
-${super.getContext()}
+${super.getContextPrompt()}
 `
 	}
 
