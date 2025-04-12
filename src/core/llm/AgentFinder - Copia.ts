@@ -31,16 +31,16 @@ class AgentFinder extends Agent {
 
 	protected getStrategyTools(): string {
 		return `## Strategy for using tools
-1. If you want to have the list of "titles" of known topics
-then you can use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
+1. In some cases it is useful to directly search for a specific word or phrase to obtain all the "text blocks" that contain it (such as a name, a subject, a topic, a concept, etc)
+then use the "search_single_word" tool to retrieve the "text blocks".
 2. If you want information through a question, description or generic phrase that returns semantically similar "text blocks"
 then use the "search_block_of_text" tool to search for "text blocks" semantically similar to the "query" and to have useful information.
-3. In some cases it is useful to directly search for a specific word or phrase to obtain all the "text blocks" that contain it (such as a name, a subject, a topic, a concept, etc)
-then use the "search_single_word" tool to retrieve the "text blocks".
-4. If you want more information about a "block of text" and you know the #ID_CHAPTER where it was extracted
+3. If you want more information about a "block of text" and you know the #ID_CHAPTER where it was extracted
 then you can use "get_specific_chapter" to get the whole "chapter" i.e. a broader context where you can look for useful information.
-5. If you want information and you want an answer with a broader context through a question, phrase, description
+4. If you want information and you want an answer with a broader context through a question, phrase, description
 then you can use "search_chapter" to get a broader context.
+5. If you want to have the list of "titles" of known topics
+then you can use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
 6. Combine these strategies together to achieve your goal.`
 	}
 

@@ -36,23 +36,22 @@ class AgentFinder extends Agent {
 and you want to search for it on the whole "document" then use the tool "search_single_word" to retrieve the "blocks of text" that contain that word or phrase.
 2. If you want "blocks of text" through a question, description or generic phrase
 then use the tool "search_block_of_text" to search for "blocks of text" semantically similar to the "query".
-3. If you want general information immediately through a question, phrase, description
+3. If you have #ID_CHAPTERs and want to access a broader context, 
+use "get_specific_chapters" to get the specific "chapters" via a list of IDs.
+4. If you want general information immediately through a question, phrase, description
 then use "search_chapter" to retrieve a series of "chapters" semantically similar to the "query".
-4. If you have #ID_CHAPTER and you want to access a broader context
-then use "get_specific_chapter" to receive the specific "chapter" through its ID.
-5. If you want to have the list of "titles" of the known topics
-then use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
-- Use the same language as "documents" for queries.
 - Combine these strategies together to achieve your goal.
 `
 	}
-
+	// 5. If you want to have the list of "titles" of the known topics
+	// then use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
+	
 	protected getOptions(): AgentFinderOptions {
 		return {
 			...super.getOptions(),
 			tools: this.getTools(),
-			paragraphLimit: 4,
-			captherLimit: 2,
+			paragraphLimit: 30,
+			captherLimit: 10,
 		}
 	}
 
@@ -64,7 +63,7 @@ then use "get_all_index" to have a generic index of all "text blocks" in "chapte
 - Search for each single ingredient as a "word" with "search_single_word" to get the "text blocks" that contain that ingredient.
 (keep in mind that the ingredient could be written differently, plural, singular, with typos, etc.)
 - Read the "text blocks" and try to understand the recipe.
-- If you need a broader context you can use #ID_CHAPTER and "get_specific_chapter" to get the complete "chapter".
+- If you need more context you can use a list of #ID_CHAPTER and "get_specific_chapters" to get all the "chapters"
 - Store the recipes that contain the ingredients you searched for.
 
 ### EXAMPLE 2
@@ -83,13 +82,13 @@ then use "get_all_index" to have a generic index of all "text blocks" in "chapte
 - You need to search for what Jade thinks of the sales department.
 - With "search_block_of_text" ask the question "what does Jade think of the sales department?"
 - Read the results and try to understand the meaning.
-- If you need a broader context you can use "get_specific_chapter" to get the complete "chapter".
+- If you need more context you can use "get_specific_chapters" to get all the complete "chapters".
 
-### EXAMPLE 5
+${true?"":`### EXAMPLE 5
 - You have a database about chemistry.
 - You need to know the list of reactions treated in the database.
 - With "get_all_index" you can get a list of "titles" and with these create a list of chemical reactions only.
-- If a "title" is too generic you can use part of the "title" with the tools "search_single_word" or "search_block_of_text" or "search_chapter" to have a broader context.
+- If a "title" is too generic you can use part of the "title" with the tools "search_single_word" or "search_block_of_text" or "search_chapter" to have a broader context.`}
 `
 	}
 
@@ -167,15 +166,19 @@ Keep in mind that:
 			}
 		})
 
-		const get_specific_chapter: Tool = tool({
-			description: `Returns a specific "chapter" by its ID.`,
+		const get_specific_chapters: Tool = tool({
+			description: `Returns one or more specific "chapters" by one or more IDs`,
 			parameters: z.object({
-				id: z.string().describe("the chapter ID"),
+				ids: z.array(z.string()).describe("the chapter IDs"),
 			}),
-			execute: async ({ id }) => {
-				const result: NodeDoc = await getItemById(id, this.tableName)
-				if (!result) return "No results"
-				return nodeToString(result)
+			execute: async ({ ids }) => {
+				if (!ids || ids.length == 0) return "No results"
+				const results:NodeDoc[] = []
+				for ( const id of ids) {
+					results.push( await getItemById(id, this.tableName))
+				}
+				if (results.length == 0 ) return "No results"
+				return results.map(result => nodeToString(result)).join("")
 			}
 		})
 
@@ -198,7 +201,7 @@ Keep in mind that:
 			}
 		})
 
-		return { search_chapter, search_block_of_text, search_single_word, get_specific_chapter, /*get_all_index*/ }
+		return { search_chapter, search_block_of_text, search_single_word, get_specific_chapters, /*get_all_index*/ }
 	}
 }
 

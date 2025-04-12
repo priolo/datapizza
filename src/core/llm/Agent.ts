@@ -24,11 +24,7 @@ export interface Response {
 }
 
 export interface AgentOptions {
-	/** per descrivere l'AGENT nel tool */
-	//description?: string
-
-	/** in aggiunta al system prompt ReAct */
-	//systemPrompt?: string
+	/** Descrive l'agent nel tool */
 	descriptionPrompt?: string
 	contextPrompt?: string
 
@@ -120,6 +116,9 @@ class Agent {
 // Please solve the following problem using reasoning and the available tools:`
 // 			}]
 // 		}
+		if ( this.history.length == 0) {
+			prompt = this.getContext() + "\n\n" + prompt
+		}
 		this.history.push({ role: "user", content: `${prompt}` })
 
 		// LOOP
@@ -216,8 +215,8 @@ class Agent {
 ## Strategy:
 - Keep the focus on the main problem and the tools at your disposal
 - Break the main problem into smaller problems (steps)
-- The steps are designed to minimize the tools used.
 - Create a list of steps to follow to solve the main problem call the tool "update_strategy"
+- The steps are designed to minimize the tools used.
 
 ${this.getRules()}
 ${this.getStrategyTools()}
@@ -241,9 +240,9 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 		rules.push(`Observation: Get the result of the tool and use it to process the answer`)
 
 		// update strategy
-		rules.push(`Update the strategy:
-If you have completed the step examined, move on to the next one.
-If you have not succeeded, try updating the strategy list by returning to the previous steps and trying again. call the tool "update_strategy"`)
+// 		rules.push(`Update the strategy:
+// If you have completed the step examined, move on to the next one.
+// If you have not succeeded, try updating the strategy list by returning to the previous steps and trying again. call the tool "update_strategy"`)
 
 		// post osservation
 		rules.push(`Repeat rules 1-${rules.length} until you can provide a final answer`)
