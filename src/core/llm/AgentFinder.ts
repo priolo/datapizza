@@ -30,18 +30,24 @@ class AgentFinder extends Agent {
 	tableName: string
 
 	protected getStrategyTools(): string {
-//		return ""
-		return `## Strategy for using search tools
-1. If you have a specific word or phrase (for example a name, a subject, a topic, a concept, etc)
-and you want to search for it on the whole "document" then use the tool "search_single_word" to retrieve the "blocks of text" that contain that word or phrase.
-2. If you want "blocks of text" through a question, description or generic phrase
-then use the tool "search_block_of_text" to search for "blocks of text" semantically similar to the "query".
-3. If you have #ID_CHAPTERs and want to access a broader context, 
-use "get_specific_chapters" to get the specific "chapters" via a list of IDs.
-4. If you want general information immediately through a question, phrase, description
-then use "search_chapter" to retrieve a series of "chapters" semantically similar to the "query".
-- Combine these strategies together to achieve your goal.
+		return `## PLEASE NOTE THAT:
+1. A "document" is a set of "chapters".
+2. A "chapter" is a fairly long text that covers a single topic.
+3. A "chapter" is composed of multiple "blocks of text".
+4. A "block of text" is a short text of about 300 letters.
+5. For searches that return semantically similar results, the meaning of the text must be evaluated.
 `
+// 		return `## Strategy for using search tools
+// 1. If you have a specific word or phrase (for example a name, a subject, a topic, a concept, etc)
+// and you want to search for it on the whole "document" then use the tool "search_single_word" to retrieve the "blocks of text" that contain that word or phrase.
+// 2. If you want "blocks of text" through a question, description or generic phrase
+// then use the tool "search_block_of_text" to search for "blocks of text" semantically similar to the "query".
+// 3. If you have #ID_CHAPTERs and want to access a broader context, 
+// use "get_specific_chapters" to get the specific "chapters" via a list of IDs.
+// 4. If you want general information immediately through a question, phrase, description
+// then use "search_chapter" to retrieve a series of "chapters" semantically similar to the "query".
+// - Combine these strategies together to achieve your goal.
+// `
 	}
 	// 5. If you want to have the list of "titles" of the known topics
 	// then use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
@@ -92,17 +98,17 @@ ${true?"":`### EXAMPLE 5
 `
 	}
 
-	protected getContext(): string {
-		return `## PLEASE NOTE THAT:
-1. A "document" is a set of "chapters".
-2. A "chapter" is a fairly long text that covers a single topic.
-3. A "chapter" is composed of multiple "blocks of text".
-4. A "block of text" is a short text of about 300 letters.
-5. For searches that return semantically similar results, the meaning of the text must be evaluated.
+// 	protected getContext(): string {
+// 		return `## PLEASE NOTE THAT:
+// 1. A "document" is a set of "chapters".
+// 2. A "chapter" is a fairly long text that covers a single topic.
+// 3. A "chapter" is composed of multiple "blocks of text".
+// 4. A "block of text" is a short text of about 300 letters.
+// 5. For searches that return semantically similar results, the meaning of the text must be evaluated.
 
-${super.getContext()}
-`
-	}
+// ${super.getContext()}
+// `
+// 	}
 
 	getTools(): ToolSet {
 

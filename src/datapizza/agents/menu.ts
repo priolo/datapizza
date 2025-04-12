@@ -32,25 +32,50 @@ export async function buildMenuAgent() {
 	return agent
 }
 
-export async function buildRecipeAgent() {
+export async function buildIngPreAgent() {
 	const agent = new AgentFinder(
-		"RECIPE",
+		"INGREDIENTE-PREPARAZIONE",
 		{
-			descriptionPrompt: `Agente che recupera le ricette in base ad una tecnica di preparazione o un ingrediente contenuto nella ricetta.`,
+			descriptionPrompt: `Agente che in base ad una tecnica di preparazione o un ingrediente recupera le ricette che li contengono.`,
 			contextPrompt: `## CONTESTO
 - Ogni ricetta ha un nome
 - Ogni ricetta ha una lista di ingredienti
-- Ogni ricetta ha una tecnica di preparazione
+- Ogni ricetta ha una lista di tecniche di preparazione
 
 ## STRATEGIA
 1. cerca i blocchi di testo con l'ingrediente o la tecnica di preparazione (preiligi la ricerca "search_single_word")
 2. allarga il contesto cercando i capitoli corrispondenti tramite #ID_CHAPTER che hai a disposizione
-3. cerca di capire qual'è il nome della ricetta
+3. quindi cerca di capire qual'è il nome della ricetta che contiene l'ingrediente o la tecnica di preparazione
 `,
 			tableName: "kb_pizza_menu",
 			tools: {
 				"get_recipes_list": get_recipes_list,
 			},
+			clearOnResponse: true,
+			maxCycles: 30,
+		}
+	)
+	await agent.build()
+	return agent
+}
+
+
+export async function buildRecipeAget() {
+	const agent = new AgentFinder(
+		"RICETTA",
+		{
+			descriptionPrompt: `Agente che data una ricetta sa dirti se contiene degli ingredienti o è realizzata con delle tecniche di preparazione.`,
+			contextPrompt: `## CONTESTO
+- Ogni ricetta ha un nome
+- Ogni ricetta ha una lista di ingredienti
+- Ogni ricetta ha una lista di tecniche di preparazione
+
+## STRATEGIA
+1. cerca i blocchi di testo con il nome della ricetta (preiligi la ricerca "search_single_word")
+2. cerca di capire se hai abbastanza contesto per trovare le tue informazioni
+3. se non hai abbastanza contesto cerca i capitoli corrispondenti tramite #ID_CHAPTER che hai a disposizione
+`,
+			tableName: "kb_pizza_menu",
 			clearOnResponse: true,
 			maxCycles: 30,
 		}
