@@ -26,7 +26,10 @@ export interface Response {
 export interface AgentOptions {
 	/** Descrive l'agent nel tool */
 	descriptionPrompt?: string
+	/** contesto nel prompt iniziale */
 	contextPrompt?: string
+	/** aggiunta al system prompt */
+	systemPrompt?: string
 
 
 	tools?: ToolSet
@@ -70,6 +73,8 @@ class Agent {
 	private subagentTools: ToolSet = {}
 	protected options: AgentOptions = {}
 
+	protected strategy: string = ""
+
 	private createSubAgentsTools(agents: Agent[]) {
 		if (!agents) return {}
 		const structs = agents.reduce<ToolSet>((acc, agent) => {
@@ -80,15 +85,17 @@ class Agent {
 				description: `Ask agent ${agent.name} for info.\n${agent.options.descriptionPrompt ?? ""}\n${agent.options.contextPrompt ?? ""}`,
 				parameters: z.object({
 					question: z.string().describe("The question to ask the agent"),
-					reason: z.string().describe("Specify the main reason for the question so that the agent can find optimized solutions.").optional(),
 				}),
-				execute: async ({ question, reason }) => {
-					colorPrint([this.name, ColorType.Blue], " : chat_with : ",
-						[agent.name, ColorType.Blue], " : ",
-						[question, ColorType.Green], " : ", [reason, ColorType.Green]
+				execute: async ({ question/*, reason*/ }) => {
+					let prompt = ""
+					prompt += "\n\n## Please solve the following problem using reasoning and the available tools:\n" + question
+
+					colorPrint([this.name, ColorType.Blue],
+						" : chat_with : ", [agent.name, ColorType.Blue],
+						" : ", [question, ColorType.Green],
 					)
-					const prompt = reason?.length > 0 ? "My goal is:\n" + reason + "\nAnswer this question:\n" + question : question
-					const response = await agent.ask(prompt)
+
+					const response = await agent.ask(prompt, true)
 					if (response.type == RESPONSE_TYPE.REQUEST) {
 						return `${agent.name} asks: ${response.text}`
 					} else if (response.type == RESPONSE_TYPE.FAILURE) {
@@ -105,13 +112,15 @@ class Agent {
 
 	async build() { }
 
-	async ask(prompt: string): Promise<Response> {
+	async ask(prompt: string, fromAgent?: boolean): Promise<Response> {
 		const systemTools = this.getSystemTools()
 		const tools = { ...this.options.tools, ...this.subagentTools, ...systemTools }
 		const systemPrompt = this.getReactSystemPrompt()
 
 		if (this.history.length == 0) {
-			prompt = this.getContextPrompt() + "\n\nPlease solve the following problem using reasoning and the available tools:\n" + prompt
+			prompt = this.getContextPrompt()
+				+ (!fromAgent ? "\n\n## Please solve the following problem using reasoning and the available tools:\n" : "")
+				+ prompt;
 		}
 		this.history.push({ role: "user", content: `${prompt}` })
 
@@ -164,7 +173,7 @@ class Agent {
 				if (functionName != "update_strategy" && !functionName.startsWith("chat_with_")) {
 					const funArgs = this.history[this.history.length - 2]?.content[1]?.["args"]
 					colorPrint([this.name, ColorType.Blue], " : function : ", [functionName, ColorType.Yellow], " : ", [JSON.stringify(funArgs), ColorType.Green])
-					console.log(result)
+					//console.log(result)
 				}
 
 				// CONTINUE RAESONING
@@ -234,6 +243,7 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 				}),
 				execute: async ({ strategy }) => {
 					colorPrint([this.name, ColorType.Blue], " : update strategy", ["\n" + strategy, ColorType.Magenta])
+					this.strategy = strategy
 					return strategy
 				}
 			}),
@@ -249,9 +259,11 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 
 	/** System instructions for ReAct agent  */
 	protected getReactSystemPrompt(): string {
-		const process = `# You are a ReAct agent that solves problems by thinking step by step.
+		const prompt = `# YOU ARE: ${this.name}.
+${this.options.descriptionPrompt ?? ""}		
+You are a ReAct agent that solves problems by thinking step by step.
 
-## MAIN STRATEGY:
+## YOUR MAIN STRATEGY:
 - Keep the focus on the main problem and the tools at your disposal
 - Break the main problem into smaller problems (steps)
 - Create a list of steps to follow to solve the main problem call the tool "update_strategy"
@@ -259,9 +271,11 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 
 ${this.getRulesPrompt()}
 
+${this.options.systemPrompt ?? ""}
+
 Always be explicit in your reasoning. Break down complex problems into steps.
 `;
-		return process
+		return prompt
 	}
 
 
@@ -274,7 +288,7 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 			rules.push(`REQUEST INFORMATION: If you can't get information from the tools or you have doubts or think you can optimize your search, call the "ask_for_information" tool to ask for more information.`)
 		}
 
-		if ( this.options.agents?.length > 0 ) {
+		if (this.options.agents?.length > 0) {
 			rules.push(`ACTION: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
 		} else {
 			rules.push(`ACTION: Choose one of the available tools to solve the problem.`)
@@ -287,19 +301,20 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 
 		rules.push(`OBSERVATION: Get the result of the tool and use it to process the answer`)
 
-		// update strategy
-		// 		rules.push(`Update the strategy:
-		// If you have completed the step examined, move on to the next one.
-		// If you have not succeeded, try updating the strategy list by returning to the previous steps and trying again. call the tool "update_strategy"`)
+		rules.push(
+`UPDATE STRATEGY:
+	- If you have the information you expect, continue with the same strategy.
+	- Else if you have more information or you have not obtained the information you are looking for, update your strategy by calling the tool "update_strategy".`
+)
 
-		rules.push(`LOOP: Repeat rules 1-${rules.length} until you can provide a final answer`)
+		rules.push(`LOOP: Repeat rules 1-${rules.length} until you can provide a FINAL ANSWER`)
 
 		rules.push(`FINAL ANSWER: When ready, use the "final_answer" tool to provide your solution.`)
 
 		const rulesPrompt = rules.map((r, i) => `${i + 1}. ${r}`).join("\n")
 
 		return `### SO FOLLOW THESE RULES:\n${rulesPrompt}`
- 
+
 	}
 
 	protected getToolsStrategyPrompt(): string {
