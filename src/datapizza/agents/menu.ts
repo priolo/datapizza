@@ -47,11 +47,6 @@ export async function buildRecipeByIngredient() {
 - Ogni ricetta ha un nome
 - Ogni ricetta ha una lista di ingredienti
 - Ogni ricetta ha una lista di tecniche di preparazione
-
-## STRATEGIA
-1. Cerca i blocchi di testo con gli ingredienti o la tecniche di preparazione (prediligi la ricerca "search_single_word").
-2. Cerca di capire se hai abbastanza contesto per trovare i nomi delle ricette.
-3. Se non hai abbastanza contesto cerca i capitoli corrispondenti tramite #ID_CHAPTER che hai a disposizione.
 `,
 
 			tableName: "kb_pizza_menu",
@@ -72,17 +67,11 @@ export async function buildRecipeAgent() {
 		"INGREDIENTS-PREPARATION-BY-RECIPE",
 		{
 			//descriptionPrompt: `Agente che data una ricetta o ricette sa dirti quali ingredienti contiene oppure con quali tecniche di preparazione è stata realizzata.`,
-			descriptionPrompt: `Agente restituisce tutte le tecniche di preparazione o tutti gli ingredienti di una o piu' ricette.`,
+			descriptionPrompt: `Agente restituisce tutte le tecniche di preparazione o tutti gli ingredienti di una o piu' ricette specificate.`,
 			contextPrompt: `## CONTESTO
 - Ogni ricetta ha un nome
 - Ogni ricetta ha una lista di ingredienti
 - Ogni ricetta ha una lista di tecniche di preparazione
-
-## STRATEGIA
-1. Cerca i blocchi di testo con i nomi delle ricette (prediligi la ricerca "search_single_word").
-2. Cerca di capire se hai abbastanza contesto per trovare i nomi degli ingredienti o tecniche di preparazione.
-3. Se non hai abbastanza contesto cerca i capitoli corrispondenti tramite #ID_CHAPTER che hai a disposizione.
-
 `,
 
 			tableName: "kb_pizza_menu",
