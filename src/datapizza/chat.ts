@@ -25,17 +25,17 @@ export async function chat() {
 	// }
 }
 
-//chat()
+chat()
 
-async function run () {
-	const pars = await vectorDBSearch("Marinatura Temporale Sincronizzata", "kb_pizza_menu", 3)
-	const chaps = []
-	for ( const p of pars) {
-		chaps.push ( await getItemById(p.parent, "kb_pizza_menu") )
-	}
+// async function run () {
+// 	const pars = await vectorDBSearch("Marinatura Temporale Sincronizzata", "kb_pizza_menu", 3)
+// 	const chaps = []
+// 	for ( const p of pars) {
+// 		chaps.push ( await getItemById(p.parent, "kb_pizza_menu") )
+// 	}
 
-	console.log( "CHAPS", chaps)
+// 	console.log( "CHAPS", chaps)
 
-} 
-run()
+// } 
+// run()
 

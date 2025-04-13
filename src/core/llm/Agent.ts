@@ -35,8 +35,6 @@ export interface AgentOptions {
 	clearOnResponse?: boolean
 	/** non chiedere al parent */
 	noAskForInformation?: boolean
-	/** non creare la strategia */
-	noStrategy?: boolean
 	/** numero massimo di cicli di reasoning */
 	maxCycles?: number
 }
@@ -81,10 +79,15 @@ class Agent {
 			acc[`chat_with_${agent.name}`] = tool({
 				description: `Ask agent ${agent.name} for info.\n${agent.options.descriptionPrompt ?? ""}\n${agent.options.contextPrompt ?? ""}`,
 				parameters: z.object({
-					prompt: z.string().describe("The question to ask the agent"),
+					question: z.string().describe("The question to ask the agent"),
+					reason: z.string().describe("Specify the main reason for the question so that the agent can find optimized solutions.").optional(),
 				}),
-				execute: async ({ prompt }) => {
-					colorPrint([this.name, ColorType.Blue], " : chat_with : ", [agent.name, ColorType.Blue], " : ", [prompt, ColorType.Green])
+				execute: async ({ question, reason }) => {
+					colorPrint([this.name, ColorType.Blue], " : chat_with : ",
+						[agent.name, ColorType.Blue], " : ",
+						[question, ColorType.Green], " : ", [reason, ColorType.Green]
+					)
+					const prompt = reason?.length > 0 ? "My goal is:\n" + reason + "\nAnswer this question:\n" + question : question
 					const response = await agent.ask(prompt)
 					if (response.type == RESPONSE_TYPE.REQUEST) {
 						return `${agent.name} asks: ${response.text}`
@@ -107,15 +110,6 @@ class Agent {
 		const tools = { ...this.options.tools, ...this.subagentTools, ...systemTools }
 		const systemPrompt = this.getReactSystemPrompt()
 
-		// inserisco un prompt di initializzazione per l'AGENT
-		// 		if (this.history.length == 0) {
-		// 			this.history = [{
-		// 				role: "user",
-		// 				content: `
-
-		// Please solve the following problem using reasoning and the available tools:`
-		// 			}]
-		// 		}
 		if (this.history.length == 0) {
 			prompt = this.getContextPrompt() + "\n\nPlease solve the following problem using reasoning and the available tools:\n" + prompt
 		}
@@ -181,7 +175,7 @@ class Agent {
 			await new Promise(resolve => setTimeout(resolve, 5000)) // wait 1 second
 		}
 
-		colorPrint(this.name, ColorType.Blue, " : ", ["failure", ColorType.Red])
+		colorPrint([this.name, ColorType.Blue], " : ", ["failure", ColorType.Red])
 		if (this.options.clearOnResponse) this.kill()
 		return {
 			text: "I can't answer because the question is too complex.",
@@ -192,7 +186,7 @@ class Agent {
 	/** elimina la history */
 	kill() {
 		this.history = []
-		colorPrint(this.name, ColorType.Blue, " : ", ["killed", ColorType.Red])
+		colorPrint([this.name, ColorType.Blue], " : ", ["killed", ColorType.Red])
 		this.options.agents.forEach(agent => agent.kill())
 	}
 
@@ -274,30 +268,42 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 	protected getRulesPrompt(): string {
 		const rules = []
 
-		rules.push(`Thought: Analyze the step problem and think about how to solve it.`)
+		rules.push(`THOUGHT: Analyze the step problem and think about how to solve it.`)
 
-		rules.push(`Action: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
+		if (!this.options.noAskForInformation) {
+			rules.push(`REQUEST INFORMATION: If you can't get information from the tools or you have doubts or think you can optimize your search, call the "ask_for_information" tool to ask for more information.`)
+		}
 
-		// pre osservation
-		if (!this.options.noAskForInformation) rules.push(`Request information: If you really can't get information from others tools call "ask_for_information" tools to ask for more information.`)
+		if ( this.options.agents?.length > 0 ) {
+			rules.push(`ACTION: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
+		} else {
+			rules.push(`ACTION: Choose one of the available tools to solve the problem.`)
+		}
 
-		// observation
-		rules.push(`Observation: Get the result of the tool and use it to process the answer`)
+		const strategyTools = this.getToolsStrategyPrompt()
+		if (strategyTools.length > 0) {
+			rules.push(`TOOLS USAGE: Preferably use this strategy to call the tools:\n${strategyTools}`)
+		}
+
+		rules.push(`OBSERVATION: Get the result of the tool and use it to process the answer`)
 
 		// update strategy
 		// 		rules.push(`Update the strategy:
 		// If you have completed the step examined, move on to the next one.
 		// If you have not succeeded, try updating the strategy list by returning to the previous steps and trying again. call the tool "update_strategy"`)
 
-		// post osservation
-		rules.push(`Repeat rules 1-${rules.length} until you can provide a final answer`)
+		rules.push(`LOOP: Repeat rules 1-${rules.length} until you can provide a final answer`)
 
-		// conclusion
-		rules.push(`When ready, use the "final_answer" tool to provide your solution.`)
+		rules.push(`FINAL ANSWER: When ready, use the "final_answer" tool to provide your solution.`)
 
-		return `## FOLLOW THIS RULES:
-${rules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
-`
+		const rulesPrompt = rules.map((r, i) => `${i + 1}. ${r}`).join("\n")
+
+		return `### SO FOLLOW THESE RULES:\n${rulesPrompt}`
+ 
+	}
+
+	protected getToolsStrategyPrompt(): string {
+		return ""
 	}
 
 	//#endregion SYSTEM PROMPT
@@ -309,5 +315,3 @@ ${rules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
 }
 
 export default Agent
-
-

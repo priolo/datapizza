@@ -30,14 +30,49 @@ class AgentFinder extends Agent {
 	tableName: string
 
 	protected getReactSystemPrompt(): string {
-		const prompt = `
-## CONTEXT FOR SEARCH TOOLS
+
+		const contextPrompt = `
+## CONTEXT FOR RESEARCH
 1. A "document" is a set of "chapters".
 2. A "chapter" is a fairly long text that covers a single topic.
-3. A "chapter" is composed of multiple "blocks of text".
-4. A "block of text" is a short text of about 300 letters.
+3. A "chapter" is composed of multiple "text blocks".
+4. A "text block" is a short text of about 300 letters.
 5. For searches that return semantically similar results, the meaning of the text must be evaluated.
 `
+
+		const strategyPrompt = `
+## STRATEGY TO SEARCH TOOLS
+### [search_with_words] If you have specific words (e.g. a name, topic, theme, concept, etc.)
+1. Search using "search_with_words" tool
+2. If you have enough context to retrieve the information reply
+3. If you don't have enough context collect all the useful #ID_CHAPTER and use "get_specific_chapters" to get more context
+4. Answer the question without translating the data
+`
+		// const strategyPrompt = `
+		// Answer the question without translating the data
+		// `
+		// ## Strategy for using search tools
+		// 1. If you have a specific word or phrase (for example a name, a subject, a topic, a concept, etc)
+		// and you want to search for it on the whole "document" then use the tool "search_single_word" to retrieve the "text block" that contain that word or phrase.
+		// 2. If you want "text block" through a question, description or generic phrase
+		// then use the tool "search_block_of_text" to search for "text block" semantically similar to the "query".
+		// 3. If you have #ID_CHAPTERs and want to access a broader context, 
+		// use "get_specific_chapters" to get the specific "chapters" via a list of IDs.
+		// 4. If you want general information immediately through a question, phrase, description
+		// then use "search_chapter" to retrieve a series of "chapters" semantically similar to the "query".
+		// - Combine these strategies together to achieve your goal.
+
+		// 5. If you want to have the list of "titles" of the known topics
+		// then use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
+
+		/*
+1. Search for the specified preparation technique using "search_single_word".
+2. Analyze the returned text blocks to identify recipes that use the technique.
+3. If necessary, use "get_specific_chapters" to retrieve the full chapters for more context.
+4. Extract the names of the recipes that use the specified technique.
+5. Provide the final answer with the list of recipe names using "final_answer"
+*/
+
 		const examplesPrompt = `
 ## EXAMPLES FOR SEARCH TOOLS
 ### EXAMPLE 1
@@ -52,7 +87,7 @@ class AgentFinder extends Agent {
 ### EXAMPLE 2
 - You have a database of suppliers.
 - You need to know all the countries in which the suppliers operate. For example for the supplier "Datapizza".
-- With "search_block_of_text" ask a generic question "Countries served by Datapizza?"
+- With "search_text_blocks" ask a generic question "Countries served by Datapizza?"
 - Read the results and try to understand which countries are served.
 
 ### EXAMPLE 3
@@ -63,7 +98,7 @@ class AgentFinder extends Agent {
 ### EXAMPLE 4
 - You have a database of chat history.
 - You need to search for what Jade thinks of the sales department.
-- With "search_block_of_text" ask the question "what does Jade think of the sales department?"
+- With "search_text_blocks" ask the question "what does Jade think of the sales department?"
 - Read the results and try to understand the meaning.
 - If you need more context you can use "get_specific_chapters" to get all the complete "chapters".
 
@@ -71,52 +106,67 @@ ${true ? "" : `### EXAMPLE 5
 - You have a database about chemistry.
 - You need to know the list of reactions treated in the database.
 - With "get_all_index" you can get a list of "titles" and with these create a list of chemical reactions only.
-- If a "title" is too generic you can use part of the "title" with the tools "search_single_word" or "search_block_of_text" or "search_chapter" to have a broader context.`}
+- If a "title" is too generic you can use part of the "title" with the tools "search_single_word" or "search_text_blocks" or "search_chapter" to have a broader context.`}
 `
-
-		// 		return `## Strategy for using search tools
-		// 1. If you have a specific word or phrase (for example a name, a subject, a topic, a concept, etc)
-		// and you want to search for it on the whole "document" then use the tool "search_single_word" to retrieve the "blocks of text" that contain that word or phrase.
-		// 2. If you want "blocks of text" through a question, description or generic phrase
-		// then use the tool "search_block_of_text" to search for "blocks of text" semantically similar to the "query".
-		// 3. If you have #ID_CHAPTERs and want to access a broader context, 
-		// use "get_specific_chapters" to get the specific "chapters" via a list of IDs.
-		// 4. If you want general information immediately through a question, phrase, description
-		// then use "search_chapter" to retrieve a series of "chapters" semantically similar to the "query".
-		// - Combine these strategies together to achieve your goal.
-		// `
-
-		return super.getReactSystemPrompt() + prompt + examplesPrompt
+		return super.getReactSystemPrompt() + contextPrompt //+ strategyPrompt// + examplesPrompt
 	}
+
+	protected getToolsStrategyPrompt(): string {
+		const prompt = `- If you have a specific word or phrase (for example a name, a subject, a topic, a concept, etc)
+- Search for "text block" with the "search_with_words" tool
+- If you have enough context to retrieve the information reply
+- If you don't have enough context collect all the useful #ID_CHAPTER and use "get_specific_chapters" to get more context
+- Answer the question without translating the data`
+		return super.getToolsStrategyPrompt() + prompt
+	}
+
+
 	// 5. If you want to have the list of "titles" of the known topics
-	// then use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
+	// 6. then use "get_all_index" to have a generic index of all "text blocks" in "chapters" in "documents".
+	// 7. If you want "text block" through a question, description or generic phrase
+	// then use the tool "search_block_of_text" to search for "text block" semantically similar to the "query".
+	// 8. If you have #ID_CHAPTERs and want to access a broader context,
+	// use "get_specific_chapters" to get the specific "chapters" via a list of IDs.
+	// 9. If you want general information immediately through a question, phrase, description
+	// then use "search_chapter" to retrieve a series of "chapters" semantically similar to the "query".
+	// - Combine these strategies together to achieve your goal.
 
 
+	// 	protected getContextPrompt(): string {
+	// 		const context = `
+	// ## TOOLS STRATEGY
+	// If you have a specific word or phrase (for example a name, a subject, a topic, a concept, etc)
+	// 1. Search for "text block" with the "search_single_word" tool
+	// 2. If you have enough context to retrieve the information reply
+	// 3. If you don't have enough context collect all the useful #ID_CHAPTER and use "get_specific_chapters" to get more context
+	// 4. Answer the question without translating the data
+	// `
+	// 		return super.getContextPrompt() + context
+	// 	}
 
 
 	protected getOptions(): AgentFinderOptions {
 		return {
 			...super.getOptions(),
 			tools: this.getTools(),
-			paragraphLimit: 30,
-			captherLimit: 10,
+			paragraphLimit: 10,
+			captherLimit: 3,
 		}
 	}
 
 	getTools(): ToolSet {
 
-		const search_chapter: Tool = tool({
-			description: `Returns a very limited number of "chapters" semantically similar to the "query".
-"Chapters" are a fairly long text that covers a single topic.
-"Chapters" are composed of "blocks of text".
-`,
+		const search_with_words: Tool = tool({
+			description: `Returns a complete list of all "text blocks" that contain exactly those words.`,
+			// Keep in mind that:
+			// - If the word is a very common or generic word it will return too many "text blocks". One strategy is to use "search_text_block".
+			// - If it is a phrase it is very specific or long it may not return the useful "text block". One strategy is to break up a phrase that is too long
+			// `,
 			parameters: z.object({
-				query: z.string().describe("The text that allows the search for information by similarity on a vector db"),
+				word: z.string().describe("The word or phrase to search for in all 'text blocks'"),
 			}),
-			execute: async ({ query }) => {
-				//const results: NodeDoc[] = (await queryDBChapter(query, "kb_pizza")).slice(0, 3)
-				const options = this.options as AgentFinderOptions
-				const results: NodeDoc[] = await vectorDBSearch(query, this.tableName, options.captherLimit, DOC_TYPE.CHAPTER, this.refs)
+			execute: async ({ word }) => {
+				const results: NodeDoc[] = await wordDBSearch(word, this.tableName, 100, DOC_TYPE.PARAGRAPH)
 				if (results.length == 0) return "No results"
 				let response = ""
 				for (const result of results) {
@@ -126,10 +176,10 @@ ${true ? "" : `### EXAMPLE 5
 			}
 		})
 
-		const search_block_of_text: Tool = tool({
-			description: `Returns a limited number of "text blocks" semantically similar to the "query".
-Note: "Text blocks" make up a "chapter".
-`,
+		const search_with_query: Tool = tool({
+			description: `Returns a limited number of "text blocks" semantically similar to the "query".`,
+			// Note: "text blocks" make up a "chapter".
+			// `,
 			parameters: z.object({
 				query: z.string().describe("The text that allows the search for information by similarity on a vector db"),
 			}),
@@ -145,17 +195,18 @@ Note: "Text blocks" make up a "chapter".
 			},
 		})
 
-		const search_single_word: Tool = tool({
-			description: `Returns a complete list of all "blocks of text" that contain exactly a single word or phrase.
-Keep in mind that:
-- If the word is a very common or generic word it will return too many "blocks of text". One strategy is to use "search_block_of_text".
-- If it is a phrase it is very specific or long it may not return the useful "block of text". One strategy is to break up a phrase that is too long
-`,
+		const search_chapter: Tool = tool({
+			description: `Returns a very limited number of "chapters" semantically similar to the "query".`,
+			// "Chapters" are a fairly long text that covers a single topic.
+			// "Chapters" are composed of "text blocks".
+			// `,
 			parameters: z.object({
-				word: z.string().describe("The word or phrase to search for in all 'text blocks'"),
+				query: z.string().describe("The text that allows the search for information by similarity on a vector db"),
 			}),
-			execute: async ({ word }) => {
-				const results: NodeDoc[] = await wordDBSearch(word, this.tableName, 100, DOC_TYPE.PARAGRAPH)
+			execute: async ({ query }) => {
+				//const results: NodeDoc[] = (await queryDBChapter(query, "kb_pizza")).slice(0, 3)
+				const options = this.options as AgentFinderOptions
+				const results: NodeDoc[] = await vectorDBSearch(query, this.tableName, options.captherLimit, DOC_TYPE.CHAPTER, this.refs)
 				if (results.length == 0) return "No results"
 				let response = ""
 				for (const result of results) {
@@ -200,7 +251,7 @@ Keep in mind that:
 			}
 		})
 
-		return { search_chapter, search_block_of_text, search_single_word, get_specific_chapters, /*get_all_index*/ }
+		return { search_with_query, search_with_words, get_specific_chapters, search_chapter, /*get_all_index*/ }
 	}
 }
 
