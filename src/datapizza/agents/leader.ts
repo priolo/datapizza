@@ -1,7 +1,7 @@
 import Agent, { AgentOptions } from "../../core/llm/Agent.js"
 import { buildCodiceAgent } from "./codice.js"
 import { buildManualeAgent } from "./manuale.js"
-import { buildMenuAgent, buildRecipeByIngredient, buildRecipeAgent } from "./menu.js"
+import { buildMenuAgent, buildRecipesByIngPre, buildIngPreByRecipes } from "./menu.js"
 import { Recipes, get_recipes_list, get_resturants_list, get_resturants_distance } from "./tools.js"
 
 
@@ -10,9 +10,9 @@ export async function buildLeadAgent() {
 
     const codiceAgent = await buildCodiceAgent()
     const manualeAgent = await buildManualeAgent()
-    //const menuAgent = await buildMenuAgent()
-    const ingPreAgent = await buildRecipeByIngredient()
-    const recipeAgent = await buildRecipeAgent()
+    const menuAgent = await buildMenuAgent()
+    const ingPreAgent = await buildRecipesByIngPre()
+    const recipeAgent = await buildIngPreByRecipes()
     const leaderAgent = new Agent(
         "LEADER",
         <AgentOptions>{
@@ -23,12 +23,10 @@ export async function buildLeadAgent() {
 - Ogni ricetta ha una lista di ingredienti
 - Ogni ricetta ha una tecnica di preparazione
 - Ogni ristorante ha uno chef
-- Ogni chef ha delle abilità e licenze
-
-${finalAswer}
-`,
+- Ogni chef ha delle abilità e licenze`,
+            contextAnswerPrompt: finalAswer,
             noAskForInformation: true,
-            agents: [codiceAgent, manualeAgent, ingPreAgent, recipeAgent, /*menuAgent*/],
+            agents: [codiceAgent, manualeAgent, /*menuAgent*/, ingPreAgent, recipeAgent],
             tools: {
                 "get_locations_list": get_resturants_list,
                 "get_locations_distance": get_resturants_distance,

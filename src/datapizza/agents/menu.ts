@@ -1,3 +1,4 @@
+import Agent from "../../core/llm/Agent.js"
 import AgentFinder from "../../core/llm/AgentFinder.js"
 import { get_recipes_list, get_resturants_list, get_resturants_distance } from "./tools.js"
 
@@ -5,31 +6,16 @@ import { get_recipes_list, get_resturants_list, get_resturants_distance } from "
 
 export async function buildMenuAgent() {
 
-	//const recipeAgent = await buildRecipeAgent()
+	const ingPreAgent = await buildIngPreByRecipes()
+	const recipesAgent = await buildRecipesByIngPre()
 
-	const agent = new AgentFinder(
+	const agent = new Agent(
 		"MENU",
 		{
-			descriptionPrompt: `Agente che risponde a domande generiche principalmente su: ricette, ingredienti, tecniche di preparazione, ristoranti, chef, skill.`,
-			contextPrompt: `## CONTESTO
-- Ogni ricetta ha una lista di ingredienti
-- Ogni ricetta ha una tecnica di preparazione
-- Ogni ristorante ha una serie di ricette
-- Ogni ristorante ha uno chef
-- Ogni chef ha delle abilità e licenze
-
-## STRATEGIA
-1. Cerca i blocchi di testo le informazioni a tua disposizione (prediligi la ricerca "search_single_word")
-2. Cerca di capire se hai abbastanza contesto per trovare le tue informazioni
-3. Se non hai abbastanza contesto cerca i capitoli corrispondenti tramite #ID_CHAPTER che hai a disposizione
-`,
-			tableName: "kb_pizza_menu",
-			tools: {
-				"get_locations_list": get_resturants_list,
-				"get_recipes_list": get_recipes_list,
-			},
-			//agents: [recipeAgent],
-			clearOnResponse: true,
+			//descriptionPrompt: `Agente che risponde a domande su: ricette, ingredienti, tecniche di preparazione, ristoranti, chef, skill.`,
+			descriptionPrompt: `Agente che risponde a domande su: ricette, ingredienti, tecniche di preparazione, ristoranti, chef, skill.`,
+			agents: [ingPreAgent, recipesAgent],
+			clearOnResponse: false,
 			maxCycles: 30,
 		}
 	)
@@ -37,22 +23,21 @@ export async function buildMenuAgent() {
 	return agent
 }
 
-export async function buildRecipeByIngredient() {
+export async function buildRecipesByIngPre() {
 	const agent = new AgentFinder(
 		"RECIPE-BY-INGREDIENTS-PREPARATION",
 		{
-			//descriptionPrompt: `Agente che in base a tecniche di preparazione o ingredienti recupera le ricette che li contengono.`,
-			descriptionPrompt: `Agente che restituisce tutte le ricette che contengono gli ingredienti o le tecniche di preparazione specificati.`,
-			contextPrompt: `## CONTESTO
-- Ogni ricetta ha un nome
-- Ogni ricetta ha una lista di ingredienti
-- Ogni ricetta ha una lista di tecniche di preparazione
+			//descriptionPrompt: `Agente che restituisce tutte le ricette che contengono gli ingredienti o le tecniche di preparazione specificati.`,
+			descriptionPrompt: `Agente che 
+forniti ingredienti o tecniche di preparazione 
+restituisce tutte le ricette che hanno quegli ingredienti o sono fatte con quelle tecniche di preparazione.
+Il formato della risposta è una lista di ricette trovate:
+RECIPE: <nome ricetta>
+INGREDIENTS: <lista ingredienti>
+TECHNIQUES: <lista tecniche di preparazione>
+---
 `,
-
 			tableName: "kb_pizza_menu",
-			// tools: {
-			// 	"get_recipes_list": get_recipes_list,
-			// },
 			clearOnResponse: true,
 			maxCycles: 30,
 		}
@@ -62,18 +47,19 @@ export async function buildRecipeByIngredient() {
 }
 
 
-export async function buildRecipeAgent() {
+export async function buildIngPreByRecipes() {
 	const agent = new AgentFinder(
 		"INGREDIENTS-PREPARATION-BY-RECIPE",
 		{
-			//descriptionPrompt: `Agente che data una ricetta o ricette sa dirti quali ingredienti contiene oppure con quali tecniche di preparazione è stata realizzata.`,
-			descriptionPrompt: `Agente restituisce tutte le tecniche di preparazione o tutti gli ingredienti di una o piu' ricette specificate.`,
-			contextPrompt: `## CONTESTO
-- Ogni ricetta ha un nome
-- Ogni ricetta ha una lista di ingredienti
-- Ogni ricetta ha una lista di tecniche di preparazione
-`,
-
+			//descriptionPrompt: `Agente restituisce tutti gli ingredienti o tutte le tecniche di preparazione di una ricetta specificata.`,
+			descriptionPrompt: `Agente che 
+fornite delle ricette 
+restituisce tutti gli ingredienti e tutte le tecniche di preparazione delle ricette fornite.
+Il formato della risposta è una lista di:
+RECIPE: <nome ricetta>
+INGREDIENTS: <lista ingredienti>
+TECHNIQUES: <lista tecniche di preparazione>
+---`,
 			tableName: "kb_pizza_menu",
 			clearOnResponse: true,
 			maxCycles: 30,

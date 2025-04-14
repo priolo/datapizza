@@ -28,6 +28,7 @@ export interface AgentOptions {
 	descriptionPrompt?: string
 	/** contesto nel prompt iniziale */
 	contextPrompt?: string
+	contextAnswerPrompt?: string
 	/** aggiunta al system prompt */
 	systemPrompt?: string
 
@@ -87,8 +88,9 @@ class Agent {
 					question: z.string().describe("The question to ask the agent"),
 				}),
 				execute: async ({ question/*, reason*/ }) => {
-					let prompt = ""
-					prompt += "\n\n## Please solve the following problem using reasoning and the available tools:\n" + question
+					//let prompt = ""
+					//prompt += "\n\n## Please solve the following problem using reasoning and the available tools:\n" + question
+					const prompt = question
 
 					colorPrint([this.name, ColorType.Blue],
 						" : chat_with : ", [agent.name, ColorType.Blue],
@@ -101,7 +103,8 @@ class Agent {
 					} else if (response.type == RESPONSE_TYPE.FAILURE) {
 						return `${agent.name} failed to answer: ${response.text}`
 					}
-					return `${agent.name} result: ${response.text}`
+					//return `Agent ${agent.name}'s response:\n${response.text}`
+					return response.text
 				},
 			})
 
@@ -119,7 +122,8 @@ class Agent {
 
 		if (this.history.length == 0) {
 			prompt = this.getContextPrompt()
-				+ (!fromAgent ? "\n\n## Please solve the following problem using reasoning and the available tools:\n" : "")
+				+ (this.options.contextAnswerPrompt ? "\n" + this.options.contextAnswerPrompt : "")
+				+ "\n\n## Please solve the following problem using reasoning and the available tools:\n"
 				+ prompt;
 		}
 		this.history.push({ role: "user", content: `${prompt}` })
@@ -152,7 +156,9 @@ class Agent {
 				// FINAL RESPONSE
 				if (content.toolName == "final_answer") {
 					colorPrint([this.name, ColorType.Blue], " : final answer: ", [result, ColorType.Green])
-					this.options.agents.forEach(agent => agent.kill())
+					this.options.agents.forEach(agent => {
+						return agent.kill()
+					})
 					if (this.options.clearOnResponse) this.kill()
 					return <Response>{
 						text: result,
@@ -173,7 +179,7 @@ class Agent {
 				if (functionName != "update_strategy" && !functionName.startsWith("chat_with_")) {
 					const funArgs = this.history[this.history.length - 2]?.content[1]?.["args"]
 					colorPrint([this.name, ColorType.Blue], " : function : ", [functionName, ColorType.Yellow], " : ", [JSON.stringify(funArgs), ColorType.Green])
-					//console.log(result)
+					console.log(result)
 				}
 
 				// CONTINUE RAESONING
@@ -301,19 +307,20 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 
 		rules.push(`OBSERVATION: Get the result of the tool and use it to process the answer`)
 
-		rules.push(
-`UPDATE STRATEGY:
+		rules.push(`UPDATE STRATEGY:
+	- Check and reflect on the data you have available:
 	- If you have the information you expect, continue with the same strategy.
-	- Else if you have more information or you have not obtained the information you are looking for, update your strategy by calling the tool "update_strategy".`
-)
+	- Otherwise if you have new information try to solve the problem and update your strategy with the "update_strategy" tool.
+	- Otherwise if you did not get what you were looking for update your strategy by calling the "update_strategy" tool.`
+		)
 
-		rules.push(`LOOP: Repeat rules 1-${rules.length} until you can provide a FINAL ANSWER`)
+		rules.push(`LOOP: Repeat rules 1. THOUGHT until you can provide a FINAL ANSWER`)
 
 		rules.push(`FINAL ANSWER: When ready, use the "final_answer" tool to provide your solution.`)
 
 		const rulesPrompt = rules.map((r, i) => `${i + 1}. ${r}`).join("\n")
 
-		return `### SO FOLLOW THESE RULES:\n${rulesPrompt}`
+		return `## SO FOLLOW THESE RULES:\n${rulesPrompt}`
 
 	}
 
@@ -324,7 +331,8 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 	//#endregion SYSTEM PROMPT
 
 	protected getContextPrompt(): string {
-		return this.options.contextPrompt ?? ""
+		const parentContextPrompt = this.parent?.getContextPrompt() ?? ""
+		return `${parentContextPrompt}\n${this.options.contextPrompt ?? ""}`
 	}
 
 }
