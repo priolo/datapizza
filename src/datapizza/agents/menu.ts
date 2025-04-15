@@ -29,12 +29,12 @@ export async function buildRecipesByIngPre() {
 		{
 			//descriptionPrompt: `Agente che restituisce tutte le ricette che contengono gli ingredienti o le tecniche di preparazione specificati.`,
 			descriptionPrompt: `Agente che 
-forniti ingredienti o tecniche di preparazione 
-restituisce tutte le ricette che hanno quegli ingredienti o sono fatte con quelle tecniche di preparazione.
-Il formato della risposta è una lista di ricette trovate:
-RECIPE: <nome ricetta>
-INGREDIENTS: <lista ingredienti>
-TECHNIQUES: <lista tecniche di preparazione>
+ACCETTA: i nomi degli ingredienti o delle tecniche di preparazione 
+RESTITUISCE: tutte le ricette con la lista degli ingredienti e le tecniche di preparazione usati.
+FORMATO DELLA RISPOSTA: è una lista di ricette trovate:
+RECIPE NAME: <nome ricetta>
+	- INGREDIENTS: <lista ingredienti>
+	- TECHNIQUES: <lista tecniche di preparazione>
 ---
 `,
 			tableName: "kb_pizza_menu",
@@ -53,12 +53,12 @@ export async function buildIngPreByRecipes() {
 		{
 			//descriptionPrompt: `Agente restituisce tutti gli ingredienti o tutte le tecniche di preparazione di una ricetta specificata.`,
 			descriptionPrompt: `Agente che 
-fornite delle ricette 
-restituisce tutti gli ingredienti e tutte le tecniche di preparazione delle ricette fornite.
-Il formato della risposta è una lista di:
-RECIPE: <nome ricetta>
-INGREDIENTS: <lista ingredienti>
-TECHNIQUES: <lista tecniche di preparazione>
+ACCETTA: dei nomi di ricette 
+RESTITUISCE: per ogni ricetta accettata tutti gli ingredienti e tutte le tecniche di preparazione.
+FORMATO DELLA RISPOSTA: è una lista di ricette:
+RECIPE NAME: <nome ricetta>
+	- INGREDIENTS: <lista ingredienti>
+	- TECHNIQUES: <lista tecniche di preparazione>
 ---`,
 			tableName: "kb_pizza_menu",
 			clearOnResponse: true,

@@ -103,7 +103,7 @@ class Agent {
 					} else if (response.type == RESPONSE_TYPE.FAILURE) {
 						return `${agent.name} failed to answer: ${response.text}`
 					}
-					//return `Agent ${agent.name}'s response:\n${response.text}`
+					//return `Take this information into consideration to REFLECTION and answer the main question\n${response.text}`
 					return response.text
 				},
 			})
@@ -176,7 +176,7 @@ class Agent {
 				}
 
 				// ANOTHER TOOL
-				if (functionName != "update_strategy" && !functionName.startsWith("chat_with_")) {
+				if (functionName != "update_strategy" && functionName != "processes_information" && !functionName.startsWith("chat_with_")) {
 					const funArgs = this.history[this.history.length - 2]?.content[1]?.["args"]
 					colorPrint([this.name, ColorType.Blue], " : function : ", [functionName, ColorType.Yellow], " : ", [JSON.stringify(funArgs), ColorType.Green])
 					console.log(result)
@@ -248,7 +248,19 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 					strategy: z.string().describe("the strategy divided into a list of steps"),
 				}),
 				execute: async ({ strategy }) => {
-					colorPrint([this.name, ColorType.Blue], " : update strategy", ["\n" + strategy, ColorType.Magenta])
+					colorPrint([this.name, ColorType.Blue], " : update_strategy : ", ["\n" + strategy, ColorType.Magenta])
+					this.strategy = strategy
+					return strategy
+				}
+			}),
+
+			processes_information: tool({
+				description: "Process all available information to generate useful data to answer the question",
+				parameters: z.object({
+					strategy: z.string().describe("The data processed from the information available to you"),
+				}),
+				execute: async ({ strategy }) => {
+					colorPrint([this.name, ColorType.Blue], " : processes_information : ", ["\n" + strategy, ColorType.Magenta])
 					this.strategy = strategy
 					return strategy
 				}
@@ -267,7 +279,7 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 	protected getReactSystemPrompt(): string {
 		const prompt = `# YOU ARE: ${this.name}.
 ${this.options.descriptionPrompt ?? ""}		
-You are a ReAct agent that solves problems by thinking step by step.
+You are a ReAct agent that solves problems by thinking step by step with reasoning.
 
 ## YOUR MAIN STRATEGY:
 - Keep the focus on the main problem and the tools at your disposal
@@ -294,25 +306,20 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 			rules.push(`REQUEST INFORMATION: If you can't get information from the tools or you have doubts or think you can optimize your search, call the "ask_for_information" tool to ask for more information.`)
 		}
 
-		if (this.options.agents?.length > 0) {
-			rules.push(`ACTION: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
-		} else {
-			rules.push(`ACTION: Choose one of the available tools to solve the problem.`)
-		}
+		rules.push(`REFLECTION: Check if all the informations obtained from the tools can answer the question, in that case call the tool "final_answer" and answer the question`)
+
+		//rules.push(`UPDATE STRATEGY: if necessary, update your strategy with the "update_strategy" tool otherwise go to the next step`)
 
 		const strategyTools = this.getToolsStrategyPrompt()
 		if (strategyTools.length > 0) {
 			rules.push(`TOOLS USAGE: Preferably use this strategy to call the tools:\n${strategyTools}`)
 		}
 
-		rules.push(`OBSERVATION: Get the result of the tool and use it to process the answer`)
-
-		rules.push(`UPDATE STRATEGY:
-	- Check and reflect on the data you have available:
-	- If you have the information you expect, continue with the same strategy.
-	- Otherwise if you have new information try to solve the problem and update your strategy with the "update_strategy" tool.
-	- Otherwise if you did not get what you were looking for update your strategy by calling the "update_strategy" tool.`
-		)
+		if (this.options.agents?.length > 0) {
+			rules.push(`ACTION: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
+		} else {
+			rules.push(`ACTION: Choose one of the available tools to solve the problem.`)
+		}
 
 		rules.push(`LOOP: Repeat rules 1. THOUGHT until you can provide a FINAL ANSWER`)
 

@@ -26,7 +26,7 @@ export async function buildLeadAgent() {
 - Ogni chef ha delle abilità e licenze`,
             contextAnswerPrompt: finalAswer,
             noAskForInformation: true,
-            agents: [codiceAgent, manualeAgent, /*menuAgent*/, ingPreAgent, recipeAgent],
+            agents: [codiceAgent, manualeAgent, /*menuAgent,*/ ingPreAgent, recipeAgent],
             tools: {
                 "get_locations_list": get_resturants_list,
                 "get_locations_distance": get_resturants_distance,
