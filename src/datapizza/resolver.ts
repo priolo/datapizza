@@ -58,7 +58,7 @@ async function run() {
 		encoding: 'utf-8',
 		skipEmptyLines: true,
 	})
-	const request = data[16]
+	const request = data[36]
 	//const request = "Quali piatti sono preparati con la Marinatura Temporale Sincronizzata"
 
 	const leadAgent = await buildLeadAgent()

@@ -83,7 +83,7 @@ class Agent {
 			agent.parent = this
 
 			acc[`chat_with_${agent.name}`] = tool({
-				description: `Ask agent ${agent.name} for info.\n${agent.options.descriptionPrompt ?? ""}\n${agent.options.contextPrompt ?? ""}`,
+				description: `Ask agent ${agent.name} for info.\n${agent.options.descriptionPrompt ?? ""}`,
 				parameters: z.object({
 					question: z.string().describe("The question to ask the agent"),
 				}),
@@ -154,7 +154,7 @@ class Agent {
 				const result = content.result as string
 
 				// FINAL RESPONSE
-				if (content.toolName == "final_answer") {
+				if (functionName == "final_answer") {
 					colorPrint([this.name, ColorType.Blue], " : final answer: ", [result, ColorType.Green])
 					this.options.agents.forEach(agent => {
 						return agent.kill()
@@ -167,7 +167,7 @@ class Agent {
 				}
 
 				// COLLECT INFORMATION
-				if (content.toolName == "ask_for_information") {
+				if (functionName == "ask_for_information") {
 					colorPrint([this.name, ColorType.Blue], " : ask info: ", [result, ColorType.Green])
 					return <Response>{
 						text: result,
@@ -176,10 +176,10 @@ class Agent {
 				}
 
 				// ANOTHER TOOL
-				if (functionName != "update_strategy" && functionName != "processes_information" && !functionName.startsWith("chat_with_")) {
-					const funArgs = this.history[this.history.length - 2]?.content[1]?.["args"]
+				if (functionName != "update_strategy" && functionName != "reasoning" && !functionName.startsWith("chat_with_")) {
+					const funArgs = this.history[this.history.length - 2]?.content[0]?.["args"]
 					colorPrint([this.name, ColorType.Blue], " : function : ", [functionName, ColorType.Yellow], " : ", [JSON.stringify(funArgs), ColorType.Green])
-					console.log(result)
+					//console.log(result)
 				}
 
 				// CONTINUE RAESONING
@@ -254,15 +254,15 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 				}
 			}),
 
-			processes_information: tool({
-				description: "Process all available information to generate useful data to answer the question",
+			reasoning: tool({
+				description: "Process all available information to generate a reasoning that is useful for answering the question",
 				parameters: z.object({
-					strategy: z.string().describe("The data processed from the information available to you"),
+					thought: z.string().describe("The reasoning developed from the information at your disposal"),
 				}),
-				execute: async ({ strategy }) => {
-					colorPrint([this.name, ColorType.Blue], " : processes_information : ", ["\n" + strategy, ColorType.Magenta])
-					this.strategy = strategy
-					return strategy
+				execute: async ({ thought }) => {
+					colorPrint([this.name, ColorType.Blue], " : reasoning : ", ["\n" + thought, ColorType.Magenta])
+					this.strategy = thought
+					return thought
 				}
 			}),
 		}
@@ -281,7 +281,7 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 ${this.options.descriptionPrompt ?? ""}		
 You are a ReAct agent that solves problems by thinking step by step with reasoning.
 
-## YOUR MAIN STRATEGY:
+## YOUR MAIN PROCESS:
 - Keep the focus on the main problem and the tools at your disposal
 - Break the main problem into smaller problems (steps)
 - Create a list of steps to follow to solve the main problem call the tool "update_strategy"
@@ -306,19 +306,20 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 			rules.push(`REQUEST INFORMATION: If you can't get information from the tools or you have doubts or think you can optimize your search, call the "ask_for_information" tool to ask for more information.`)
 		}
 
-		rules.push(`REFLECTION: Check if all the informations obtained from the tools can answer the question, in that case call the tool "final_answer" and answer the question`)
+		rules.push(`REASONING: If necessary, process the data at your disposal with the tool "reasoning"`)
 
-		//rules.push(`UPDATE STRATEGY: if necessary, update your strategy with the "update_strategy" tool otherwise go to the next step`)
+		rules.push(`CHECK: If all the information obtained can answer the question, call the tool "final_answer" and answer the question`)
+
+		rules.push(`UPDATE STRATEGY: If necessary, update your strategy with the "update_strategy" tool otherwise go to the next step`)
 
 		const strategyTools = this.getToolsStrategyPrompt()
 		if (strategyTools.length > 0) {
 			rules.push(`TOOLS USAGE: Preferably use this strategy to call the tools:\n${strategyTools}`)
 		}
-
 		if (this.options.agents?.length > 0) {
-			rules.push(`ACTION: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
+			rules.push(`RETRIEVE INFORMATION: First use "chat_with_<agent_name>" if the agent can help you otherwise choose another available tool.`)
 		} else {
-			rules.push(`ACTION: Choose one of the available tools to solve the problem.`)
+			rules.push(`RETRIEVE INFORMATION: Choose one of the available tools to solve the problem.`)
 		}
 
 		rules.push(`LOOP: Repeat rules 1. THOUGHT until you can provide a FINAL ANSWER`)

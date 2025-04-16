@@ -6,7 +6,9 @@ export async function buildManualeAgent() {
 	const agent = new AgentFinder(
 		"MANUALE",
 		{
-			descriptionPrompt: `Agente che risponde a domande sul Manuale di Cucina dello chef Sirius Cosmo`,
+			descriptionPrompt: `Agente che 
+ACCETTA: il nome di una tecnica di preparazione
+RESTITUISCE: Come funziona, Vantaggi e Svantaggi`,
 			contextPrompt: `## Il Manuale di Cucina contiene informazioni su:
 1) Abilità e licenze.
 Una serie di abilità e licenze che ogni chef può avere.

@@ -60,7 +60,7 @@ class AgentFinder extends Agent {
 	}
 
 	getTools(): ToolSet {
-
+// [TO DO] deve essere possibile inviare un array di "word" per cercare in AND
 		const search_text_blocks_with_words: Tool = tool({
 			description: `Returns a complete list of all "text blocks" that contain exactly those words.
 Keep in mind that:
