@@ -1,6 +1,7 @@
 import readline from 'readline';
 import { buildLeadAgent } from "./agents/leader.js";
-import { getItemById, vectorDBSearch } from '../core/db.js';
+import { getItemById, multiWordDBSearch, multiWordDBSearch2, vectorDBSearch } from '../core/db.js';
+import { DOC_TYPE } from '../types.js';
 
 
 
@@ -25,17 +26,16 @@ export async function chat() {
 	// }
 }
 
-chat()
+//chat()
 
-// async function run () {
-// 	const pars = await vectorDBSearch("Marinatura Temporale Sincronizzata", "kb_pizza_menu", 3)
-// 	const chaps = []
-// 	for ( const p of pars) {
-// 		chaps.push ( await getItemById(p.parent, "kb_pizza_menu") )
-// 	}
+async function run() {
+	const chaps = await multiWordDBSearch(["Foglie di Nebulosa"], "kb_pizza_menu", 100, DOC_TYPE.CHAPTER)
+	console.log("CHAPS", chaps)
+}
+async function run2() {
+	const chaps = await getItemById('0dc40262-9e72-4a90-9971-884a6f5f4dae', "kb_pizza_menu")
+	console.log("CHAPS", chaps)
+}
 
-// 	console.log( "CHAPS", chaps)
-
-// } 
-// run()
+run()
 

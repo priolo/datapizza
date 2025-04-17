@@ -1,3 +1,4 @@
+import { z } from "zod"
 import Agent, { AgentOptions } from "../../core/llm/Agent.js"
 import { buildCodiceAgent } from "./codice.js"
 import { buildManualeAgent } from "./manuale.js"
@@ -26,21 +27,29 @@ export async function buildLeadAgent() {
 - Ogni chef ha delle abilità e licenze`,
             contextAnswerPrompt: finalAswer,
             noAskForInformation: true,
-            agents: [codiceAgent, manualeAgent, /*menuAgent,*/ ingPreAgent, recipeAgent],
+            //agents: [ menuAgent],
+            //agents: [codiceAgent, manualeAgent, ingPreAgent, recipeAgent],
+            agents: [ingPreAgent, recipeAgent],
             tools: {
                 "get_locations_list": get_resturants_list,
                 "get_locations_distance": get_resturants_distance,
                 //"get_dish_list": get_dish_list,
-                // "get_recipe_index": {
-                //     description: `Restituisce un numero univoco che codifica la ricetta. Utile per la risposta finale.`, 
-                //     parameters: {
-                //         recipe: "string",
-                //     },
-                //     execute: async ({ recipe }) => {
-                //         const index = Dishes[recipe]
-                //         return response
-                //     }
-                // }
+                "get_recipes_index": {
+                    description: `Codifica tutti nomi di ricette passati. Utile per la risposta finale.`,
+                    parameters: z.object({
+                        recipes: z.array(z.string()).describe("Lista di nomi di ricette"),
+                    }),
+                    execute: async ({ recipes }: { recipes: string[] }) => {
+                        const allRecipes = Object.entries(Recipes)
+                        return recipes.map(recipe => {
+                            const normalizedRecipe = recipe.toLowerCase().replace(/[^a-z0-9]/g, "");
+                            return allRecipes.find(([name, id]) => {
+                                const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+                                return normalizedName === normalizedRecipe;
+                            })?.[1] ?? -1
+                        })
+                    }
+                }
             },
         }
     )
@@ -48,9 +57,22 @@ export async function buildLeadAgent() {
 }
 
 
+// const finalAswer = `## SOLO PER LA RISPOSTA FINALE:
+// - ATTENZIONE: Gli INDICI sono utilizzati solo per la risposta finale, gli altri agenti non conoscono gli INDICI.
+// - Una volta ottenuta la ricetta o le ricette bisogna codificare il nome di ogni ricetta nel suo INDICE coorrispondente.
+// - E quindi poi restituire all'utente solamente la lista di INDICI separati da virgole.
+// - La relazione per convertire una ricett nel suo corrispettivo INDICE da usare come risposta finale è:
+// ${Object.entries(Recipes).map(([name, id]) => `${id} = ${name}`).join(", ")}`
+
+// const finalAswer = `## SOLO PER LA RISPOSTA FINALE:
+// - ATTENZIONE: Gli INDICI sono utilizzati solo per la risposta finale, gli altri agenti non conoscono gli INDICI.
+// - Una volta ottenuta la ricetta o le ricette bisogna codificare il nome di ogni ricetta nel suo INDICE coorrispondente.
+// - Quindi poi restituire all'utente solamente la lista di INDICI separati da virgole.
+// - Usa il tool "get_recipes_index" per effettuare questa conversione
+// `
+
 const finalAswer = `## SOLO PER LA RISPOSTA FINALE:
-- ATTENZIONE: Gli INDICI sono utilizzati solo per la risposta finale, gli altri agenti non conoscono gli INDICI.
 - Una volta ottenuta la ricetta o le ricette bisogna codificare il nome di ogni ricetta nel suo INDICE coorrispondente.
-- E quindi poi restituire all'utente solamente la lista di INDICI separati da virgole.
-- La relazione per convertire una ricett nel suo corrispettivo INDICE da usare come risposta finale è:
-${Object.entries(Recipes).map(([name, id]) => `${id} = ${name}`).join(", ")}`
+- Usa il tool "get_recipes_index" per effettuare questa conversione
+- Quindi poi restituire all'utente solamente la lista di INDICI separati da virgole.
+`

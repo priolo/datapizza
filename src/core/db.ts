@@ -105,6 +105,77 @@ export async function wordDBSearch(word: string, tableName: string, limit: numbe
 }
 
 
+export async function multiWordDBSearch(words: string[], tableName: string, limit: number = 100, type?: DOC_TYPE): Promise<NodeDoc[]> {
+	try {
+		const db = await lancedb.connect(dbPath)
+		const table = await db.openTable(tableName)
+		const searchQuery = table.query()
+		
+		let sql = words.map(word => {
+			const cleanWord = word.toLowerCase().replace(/[^a-zA-Z0-9]/g, '')
+			return `regexp_replace(LOWER(text), '[^a-zA-Z0-9]', '', 'g') LIKE '%${cleanWord}%'`
+		}).join(" AND ");
+		
+		if (!!type) sql += ` AND type = '${type}'`
+		const likeDocs = (await searchQuery
+			.where(sql)
+			.limit(limit)
+			.toArray())
+			.map((item) => ({ ...item, vector: [...item.vector] }))
+
+		return Object.values(likeDocs)
+
+	} catch (error) {
+		console.error("Error in multiWordDBSearch: ", error);
+		return [];
+	}
+}
+
+export async function multiWordDBSearch2(words: string[], tableName: string, limit: number = 100, type?: DOC_TYPE): Promise<NodeDoc[]> {
+	try {
+		const db = await lancedb.connect(dbPath)
+		const table = await db.openTable(tableName)
+		const searchQuery = table.query()
+		
+		// Build SQL conditions for each word with AND logic
+		let sql = words.map(word => `LOWER(text) LIKE '%${word.toLowerCase()}%'`).join(" AND ");
+		
+		if (!!type) sql += ` AND type = '${type}'`
+		const likeDocs = (await searchQuery
+			.where(sql)
+			.limit(limit)
+			.toArray())
+			.map((item) => ({ ...item, vector: [...item.vector] }))
+
+		// For semantic search, use combined words as the query
+		// let queryNear = null
+		// for ( const word of words ) {
+		// 	queryNear = searchQuery.nearestToText(word, ["text"])
+		// }
+		
+		//if (!!type) queryNear.where(`type = '${type}'`)
+		const nearestDocs: NodeDoc[] = []
+		// Uncomment if you want semantic search results
+		// (await queryNear
+		//   .limit(limit)
+		//   .toArray())
+		//   .map((item) => ({ ...item, vector: [...item.vector] }))
+
+		// Filter out duplicates based on UUID
+		const docs = [...likeDocs, ...nearestDocs].reduce((acc, doc) => {
+			if (acc[doc.uuid]) return acc;
+			acc[doc.uuid] = doc;
+			return acc;
+		}, {})
+		return Object.values(docs)
+
+	} catch (error) {
+		console.error("Error in multiWordDBSearch: ", error);
+		return [];
+	}
+}
+
+
 export async function getAllIndex(tableName: string, refs?: string[]): Promise<NodeDoc[]> {
 	try {
 		const db = await lancedb.connect(dbPath);
@@ -128,13 +199,10 @@ export async function getItemById(uuid: string, tableName: string): Promise<Node
 	try {
 		const db = await lancedb.connect(dbPath);
 		const table = await db.openTable(tableName);
-		// Use filter() instead of search() with a string query
 		const results: NodeDoc[] = await table.query()
 			.where(`uuid = '${uuid}'`)
-			//.select(["uuid"])
 			.limit(1)
 			.toArray();
-
 		return results?.[0];
 	} catch (error) {
 		console.error("Error retrieving item by ID:", error);

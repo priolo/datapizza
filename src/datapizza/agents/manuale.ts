@@ -8,7 +8,7 @@ export async function buildManualeAgent() {
 		{
 			descriptionPrompt: `Agente che 
 ACCETTA: il nome di una tecnica di preparazione
-RESTITUISCE: Come funziona, Vantaggi e Svantaggi`,
+RESTITUISCE: Come la tecnica di preparazione funziona, i suoi vantaggi e i suoi svantaggi`,
 			contextPrompt: `## Il Manuale di Cucina contiene informazioni su:
 1) Abilità e licenze.
 Una serie di abilità e licenze che ogni chef può avere.

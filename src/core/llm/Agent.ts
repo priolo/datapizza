@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { mistral } from "@ai-sdk/mistral"
+import { cohere } from "@ai-sdk/cohere"
 import { CoreMessage, generateText, tool, ToolSet } from "ai";
 import dotenv from 'dotenv';
 import { z } from "zod";
@@ -63,8 +64,11 @@ class Agent {
 			agents: [...defaultOptions.agents ?? [], ...options.agents ?? []],
 		}
 
+		//this.model = google('gemini-2.5-pro-exp-03-25')
 		this.model = google('gemini-2.0-flash')
 		//this.model = mistral('mistral-large-latest')
+		//this.model = cohere('command-r-plus')
+
 		this.subagentTools = this.createSubAgentsTools(options.agents)
 	}
 
@@ -73,7 +77,6 @@ class Agent {
 	private history: CoreMessage[] = []
 	private subagentTools: ToolSet = {}
 	protected options: AgentOptions = {}
-
 	protected strategy: string = ""
 
 	private createSubAgentsTools(agents: Agent[]) {
@@ -99,10 +102,16 @@ class Agent {
 
 					const response = await agent.ask(prompt, true)
 					if (response.type == RESPONSE_TYPE.REQUEST) {
-						return `${agent.name} asks: ${response.text}`
+						return `Helpful information to answer:\n${response.text}`
 					} else if (response.type == RESPONSE_TYPE.FAILURE) {
-						return `${agent.name} failed to answer: ${response.text}`
+						return `failed to answer`
 					}
+
+					// if (response.type == RESPONSE_TYPE.REQUEST) {
+					// 	return `${agent.name} asks: ${response.text}`
+					// } else if (response.type == RESPONSE_TYPE.FAILURE) {
+					// 	return `${agent.name} failed to answer: ${response.text}`
+					// }
 					//return `Take this information into consideration to REFLECTION and answer the main question\n${response.text}`
 					return response.text
 				},
@@ -123,7 +132,7 @@ class Agent {
 		if (this.history.length == 0) {
 			prompt = this.getContextPrompt()
 				+ (this.options.contextAnswerPrompt ? "\n" + this.options.contextAnswerPrompt : "")
-				+ "\n\n## Please solve the following problem using reasoning and the available tools:\n"
+				+ "\n\n## Please solve the following problem using MAIN PROCESS:\n"
 				+ prompt;
 		}
 		this.history.push({ role: "user", content: `${prompt}` })
@@ -144,9 +153,8 @@ class Agent {
 				maxSteps: 1,
 			})
 
-			this.history.push(...r.response.messages)
-
 			const lastMessage = r.response.messages[r.response.messages.length - 1]
+			this.history.push(...r.response.messages)
 
 			if (lastMessage.role == "tool") {
 				const content = lastMessage.content[0]
@@ -176,10 +184,10 @@ class Agent {
 				}
 
 				// ANOTHER TOOL
-				if (functionName != "update_strategy" && functionName != "reasoning" && !functionName.startsWith("chat_with_")) {
+				if (functionName != "update_strategy" && functionName != "get_reasoning" && !functionName.startsWith("chat_with_")) {
 					const funArgs = this.history[this.history.length - 2]?.content[0]?.["args"]
 					colorPrint([this.name, ColorType.Blue], " : function : ", [functionName, ColorType.Yellow], " : ", [JSON.stringify(funArgs), ColorType.Green])
-					//console.log(result)
+					console.log(result)
 				}
 
 				// CONTINUE RAESONING
@@ -254,7 +262,7 @@ User: "give me the temperature where I am now". You: "where are you now?", User:
 				}
 			}),
 
-			reasoning: tool({
+			get_reasoning: tool({
 				description: "Process all available information to generate a reasoning that is useful for answering the question",
 				parameters: z.object({
 					thought: z.string().describe("The reasoning developed from the information at your disposal"),
@@ -296,21 +304,16 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 		return prompt
 	}
 
-
 	protected getRulesPrompt(): string {
 		const rules = []
 
-		rules.push(`THOUGHT: Analyze the step problem and think about how to solve it.`)
+		//rules.push(`THOUGHT: Analyze the step problem and think about how to solve it.`)
 
-		if (!this.options.noAskForInformation) {
-			rules.push(`REQUEST INFORMATION: If you can't get information from the tools or you have doubts or think you can optimize your search, call the "ask_for_information" tool to ask for more information.`)
-		}
+		rules.push(`REASONING: If necessary, process the information at your disposal with the "get_reasoning" tool`)
 
-		rules.push(`REASONING: If necessary, process the data at your disposal with the tool "reasoning"`)
+		rules.push(`CHECK: Try to make exclusions or groupings and if by integrating the information obtained with the tools with those you already have at your disposal. If all the information obtained can answer the question, call the tool "final_answer" and answer the question`)
 
-		rules.push(`CHECK: If all the information obtained can answer the question, call the tool "final_answer" and answer the question`)
-
-		rules.push(`UPDATE STRATEGY: If necessary, update your strategy with the "update_strategy" tool otherwise go to the next step`)
+		rules.push(`UPDATE STRATEGY: If necessary, update your strategy with the "update_strategy" tool and go to 1. REASONING otherwise go to the next step`)
 
 		const strategyTools = this.getToolsStrategyPrompt()
 		if (strategyTools.length > 0) {
@@ -322,7 +325,13 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 			rules.push(`RETRIEVE INFORMATION: Choose one of the available tools to solve the problem.`)
 		}
 
-		rules.push(`LOOP: Repeat rules 1. THOUGHT until you can provide a FINAL ANSWER`)
+		// if (!this.options.noAskForInformation) {
+		// 	rules.push(`REQUEST INFORMATION: If you can't get information from the tools or you have doubts or think you can optimize your search, call the "ask_for_information" tool to ask for more information.`)
+		// }
+
+		//rules.push(`CHECK: Try to make exclusions or groupings and if by integrating the information obtained with the tools with those you already have at your disposal you can answer the question`)
+
+		rules.push(`LOOP: Repeat rules 1. REASONING until you can provide a FINAL ANSWER`)
 
 		rules.push(`FINAL ANSWER: When ready, use the "final_answer" tool to provide your solution.`)
 
