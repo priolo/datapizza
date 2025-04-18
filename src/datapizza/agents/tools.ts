@@ -40,6 +40,26 @@ export const get_resturants_distance = tool({
 	}
 })
 
+export const get_resturant_distances = tool({
+	description: "Restituisce la distanza tra il ristorante specificato e tutti gli altri in anni luce",
+	parameters: z.object({
+		partenza: z.string().describe("Il nome del ristorante partenza da quale derivare tutte le altre distanze"),
+	}),
+	execute: async ({ partenza }) => {
+		const indexPartenza = Locations.indexOf(partenza)
+		if (indexPartenza === -1 ) {
+			return `Non conosco il ristorante ${partenza}`
+		}
+		const distances = Distances[indexPartenza]
+		
+		return `La distanza tra ${partenza} e gli altri ristoranti sono:
+${distances.map((distance, index) => `${Locations[index]}: ${distance} anni luce`).join("\n")}
+`
+	}
+})
+
+
+
 export const get_recipes_list = tool({
 	description: "Restituisce una lista di tutte le ricette disponibili",
 	parameters: z.object({}),
@@ -50,6 +70,20 @@ export const get_recipes_list = tool({
 
 
 export const Locations = ["Tatooine", "Asgard", "Namecc", "Arrakis", "Krypton", "Pandora", "Cybertron", "Ego", "Montressosr", "Klyntar"]
+
+const Distances = [
+	[0, 695, 641, 109, 661, 1130, 344, 835, 731, 530],
+	[695, 0, 550, 781, 188, 473, 493, 156, 240, 479],
+	[641, 550, 0, 651, 367, 987, 728, 688, 767, 845],
+	[109, 781, 651, 0, 727, 1227, 454, 926, 834, 640],
+	[661, 188, 367, 727, 0, 626, 557, 321, 422, 599],
+	[1130, 473, 987, 1227, 626, 0, 847, 317, 413, 731],
+	[344, 493, 728, 454, 557, 847, 0, 594, 434, 186],
+	[835, 156, 688, 926, 321, 317, 594, 0, 215, 532],
+	[731, 240, 767, 834, 422, 413, 434, 215, 0, 331],
+	[530, 479, 845, 640, 599, 731, 186, 532, 331, 0],
+]
+
 
 export const Recipes = {
 	"Alternate Realities Risotto": 0,

@@ -1,13 +1,13 @@
 import Agent from "../../core/llm/Agent.js"
 import AgentFinder from "../../core/llm/AgentFinder.js"
-import { get_recipes_list, get_resturants_list, get_resturants_distance } from "./tools.js"
+import { get_recipes_list, get_resturants_list, get_resturants_distance, get_resturant_distances } from "./tools.js"
 
 
 
 export async function buildMenuAgent() {
 
-	const ingPreAgent = await buildIngPreByRecipes()
-	const recipesAgent = await buildRecipesByIngPre()
+	const ingPreAgent = await buildIngredientsPreparationsAgent()
+	const recipesAgent = await buildRecipesAgent()
 
 	const agent = new Agent(
 		"MENU",
@@ -22,11 +22,10 @@ export async function buildMenuAgent() {
 	return agent
 }
 
-export async function buildRecipesByIngPre() {
+export async function buildRecipesAgent() {
 	const agent = new AgentFinder(
 		"RECIPE-BY-INGREDIENTS-PREPARATION",
 		{
-			//descriptionPrompt: `Agente che restituisce tutte le ricette che contengono gli ingredienti o le tecniche di preparazione specificati.`,
 			descriptionPrompt: `Agente che 
 ACCETTA: i nomi degli ingredienti o delle tecniche di preparazione. Puoi fare anche combinazioni di ingredienti o preparazioni con inclusioni o esclusioni.
 RESTITUISCE: tutte le ricette con la lista degli ingredienti e le tecniche di preparazione usate.
@@ -45,8 +44,7 @@ RECIPE NAME: <nome ricetta>
 	return agent
 }
 
-
-export async function buildIngPreByRecipes() {
+export async function buildIngredientsPreparationsAgent() {
 	const agent = new AgentFinder(
 		"INGREDIENTS-PREPARATION-BY-RECIPE",
 		{
@@ -62,6 +60,40 @@ RECIPE NAME: <nome ricetta>
 			tableName: "kb_pizza_menu",
 			clearOnResponse: true,
 			maxCycles: 30,
+		}
+	)
+	await agent.build()
+	return agent
+}
+
+export async function buildResturantsAgent() {
+	const agent = new AgentFinder(
+		"RESTURANTS",
+		{
+			descriptionPrompt: `Agente esperto di ristoranti.
+ACCETTA: il nome di un ristorante.
+RESTITUISCE: lo chef che ci lavora, la lista di ricette servite e le preparazioni.
+FORMATO DELLA RISPOSTA: dettaglio del ristorante cercato:
+# RESTAURANT NAME: <nome ristorante>
+# CHEF: <nome chef>
+# RECIPE NAME: <nome ricetta>
+	- INGREDIENTS: <lista ingredienti>
+	- TECHNIQUES: <lista tecniche di preparazione>
+...
+`,
+			contextPrompt: `## PER CERCARE UN RISTORANTE:
+- Cerca il nome del ristorante con il tool "search_chapter_with_words"
+- Se trova qualcosa individua il riferimento al documento (#DOCUMENT)
+- Usa il riferimento #DOCUMENT con il tool "search_document_with_ref" per ottenere TUTTO il documento che parla del ristorante.
+`,
+			tableName: "kb_pizza_menu",
+			clearOnResponse: true,
+			searchDocEnabled: true,
+			maxCycles: 30,
+			// tools: {
+			// 	get_resturants_list,
+            //     get_resturant_distances,
+			// }
 		}
 	)
 	await agent.build()

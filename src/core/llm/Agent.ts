@@ -29,6 +29,7 @@ export interface AgentOptions {
 	descriptionPrompt?: string
 	/** contesto nel prompt iniziale */
 	contextPrompt?: string
+	/** indica come formattare la risposta finale */
 	contextAnswerPrompt?: string
 	/** aggiunta al system prompt */
 	systemPrompt?: string
@@ -225,7 +226,6 @@ class Agent {
 	}
 
 	protected getSystemTools(): ToolSet {
-
 		const tools = {
 			final_answer: tool({
 				description: "Provide the final answer to the problem",
@@ -313,7 +313,7 @@ Always be explicit in your reasoning. Break down complex problems into steps.
 
 		rules.push(`CHECK: Try to make exclusions or groupings and if by integrating the information obtained with the tools with those you already have at your disposal. If all the information obtained can answer the question, call the tool "final_answer" and answer the question`)
 
-		rules.push(`UPDATE STRATEGY: If necessary, update your strategy with the "update_strategy" tool and go to 1. REASONING otherwise go to the next step`)
+		rules.push(`UPDATE STRATEGY: If necessary, update your strategy with the "update_strategy" tool and go to 1. REASONING. Otherwise go to the next step`)
 
 		const strategyTools = this.getToolsStrategyPrompt()
 		if (strategyTools.length > 0) {

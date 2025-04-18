@@ -2,14 +2,11 @@
 export type NodeDoc = {
 	uuid?: string;
 	parent?: string;
-	
+	ref?: string;
 
 	text: string;
-	ref?: string;
 	type?: DOC_TYPE;
-
 	vector: number[];
-	//_distance?: number;
 }
 
 export enum DOC_TYPE {

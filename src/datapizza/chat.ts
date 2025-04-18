@@ -1,6 +1,6 @@
 import readline from 'readline';
 import { buildLeadAgent } from "./agents/leader.js";
-import { getItemById, multiWordDBSearch, multiWordDBSearch2, vectorDBSearch } from '../core/db.js';
+import { getDocumentByRef, getItemById, multiWordDBSearch, nodeToString, vectorDBSearch } from '../core/db.js';
 import { DOC_TYPE } from '../types.js';
 
 
@@ -29,12 +29,17 @@ export async function chat() {
 //chat()
 
 async function run() {
-	const chaps = await multiWordDBSearch(["Foglie di Nebulosa"], "kb_pizza_menu", 100, DOC_TYPE.CHAPTER)
-	console.log("CHAPS", chaps)
+	const chaps = await multiWordDBSearch(["frutti","diavolo"], "kb_pizza_menu", 100, DOC_TYPE.CHAPTER)
+	const results = chaps.map(result => nodeToString(result)).join("")
+	console.log("CHAPS", results)
 }
 async function run2() {
 	const chaps = await getItemById('0dc40262-9e72-4a90-9971-884a6f5f4dae', "kb_pizza_menu")
 	console.log("CHAPS", chaps)
+}
+async function run3() {
+	const docs = await getDocumentByRef('../../data/pizza/Menu/L Etere del Gusto.pdf', "kb_pizza_menu")
+	console.log("DOC", docs)
 }
 
 run()

@@ -9,6 +9,9 @@ const dbPath = "./vectorsDB/lancedb";
 const VECTOR_DIM = 1024 //384 //768; // Dimension of the embedding vector
 
 
+
+
+
 export async function vectorDBCreateAndStore(nodes: NodeDoc[], tableName: string) {
 	const db = await lancedb.connect(dbPath);
 
@@ -46,6 +49,8 @@ export async function vectorDBCreateAndStore(nodes: NodeDoc[], tableName: string
 }
 
 
+
+
 export async function vectorDBSearch(text: string, tableName: string, limit: number, type?: DOC_TYPE, refs?: string[]): Promise<NodeDoc[]> {
 	const db = await lancedb.connect(dbPath);
 	const table = await db.openTable(tableName);
@@ -66,8 +71,152 @@ export async function vectorDBSearch(text: string, tableName: string, limit: num
 	return results.map((item) => ({ ...item, vector: [...item.vector] }))
 }
 
+export async function multiWordDBSearch(words: string[], tableName: string, limit: number = 100, type?: DOC_TYPE): Promise<NodeDoc[]> {
+	try {
+		const db = await lancedb.connect(dbPath)
+		const table = await db.openTable(tableName)
+		const searchQuery = table.query()
+		
+		let sql = words.map(word => {
+			const cleanWord = word.toLowerCase().replace(/[^a-zA-Z0-9]/g, '')
+			return `regexp_replace(LOWER(text), '[^a-zA-Z0-9]', '', 'g') LIKE '%${cleanWord}%'`
+		}).join(" AND ");
+		if (!!type) sql += ` AND type = '${type}'`
 
-export async function wordDBSearch(word: string, tableName: string, limit: number = 100, type?: DOC_TYPE): Promise<NodeDoc[]> {
+		const likeDocs = (await searchQuery
+			.where(sql)
+			.limit(limit)
+			.toArray())
+			.map((item) => ({ ...item, vector: [...item.vector] }))
+
+		return Object.values(likeDocs)
+
+	} catch (error) {
+		console.error("Error in multiWordDBSearch: ", error);
+		return [];
+	}
+}
+
+export async function getDocumentByRef(ref: string, tableName: string, type?: DOC_TYPE): Promise<NodeDoc[]> {
+	try {
+		const db = await lancedb.connect(dbPath);
+		const table = await db.openTable(tableName);
+		const cleanRef = ref.toLowerCase().replace(/[^a-zA-Z0-9]/g, '')
+		let sql = `regexp_replace(LOWER(ref), '[^a-zA-Z0-9]', '', 'g') LIKE '%${cleanRef}%'`
+		if ( !!type ) sql += ` AND type = '${type}'`
+		const results: NodeDoc[] = await table.query()
+			.where(sql)
+			.toArray();
+		return results;
+	} catch (error) {
+		console.error("Error retrieving item by ID:", error);
+		return null;
+	}
+}
+
+export async function getAllIndex(tableName: string, refs?: string[]): Promise<NodeDoc[]> {
+	try {
+		const db = await lancedb.connect(dbPath);
+		const table = await db.openTable(tableName);
+		const searchQuery = table.query()
+		if (!!refs && refs.length > 0) {
+			const whereClause = refs.map(r => `ref LIKE '%${r}%'`).join(" OR ")
+			searchQuery.where(whereClause)
+		}
+		const docs: NodeDoc[] = (await searchQuery.where(`type = '${DOC_TYPE.INDEX}'`).toArray())
+			.map((item) => ({ ...item, vector: [...item.vector] }))
+		return docs
+	} catch (error) {
+		console.error("Error retrieving all index:", error);
+		return [];
+	}
+}
+
+export async function getItemById(uuid: string, tableName: string): Promise<NodeDoc | null> {
+	try {
+		const db = await lancedb.connect(dbPath);
+		const table = await db.openTable(tableName);
+		const results: NodeDoc[] = await table.query()
+			.where(`uuid = '${uuid}'`)
+			.limit(1)
+			.toArray();
+		return results?.[0];
+	} catch (error) {
+		console.error("Error retrieving item by ID:", error);
+		return null;
+	}
+}
+
+
+
+
+
+/**
+ * Deletes the entire LanceDB database directory
+ * @returns Promise that resolves when deletion is complete
+ */
+export async function deleteVectorDB(): Promise<boolean> {
+	// Ask for confirmation before deleting the database
+	const readline = await import('readline');
+	const rl = readline.createInterface({input: process.stdin,output: process.stdout});
+	const confirmation = await new Promise<boolean>((resolve) => {
+		rl.question('Are you sure you want to definitely delete the database? (yes/no): ', (answer) => {
+			resolve(answer.toLowerCase() === 'yes');
+		});
+	});
+	rl.close();
+	if (!confirmation) {
+		console.log('Database deletion cancelled.');
+		return false
+	}
+	console.log('Proceeding with database deletion...');
+
+	try {
+		// Check if the directory exists before attempting to delete
+		await fs.access(dbPath);
+		// Delete the directory and all its contents recursively
+		await fs.rm(dbPath, { recursive: true, force: true });
+		console.log(`Vector database at ${dbPath} has been deleted`);
+		return true
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+			console.log(`Vector database at ${dbPath} does not exist`);
+			return false
+		} else {
+			console.error(`Error deleting vector database:`, error);
+			throw error;
+		}
+	}
+}
+
+export function nodeToString(node: NodeDoc): string {
+	if (!node) return "";
+
+	if (node.type == DOC_TYPE.PARAGRAPH) {
+		return (node.uuid ? `#TEXT_BLOCK_ID:${node.uuid}\n` : "")
+			+ (node.parent ? `#CHAPTER_ID:${node.parent}\n` : "")
+			+ (node.ref ? `#DOCUMENT:${node.ref}\n` : "")
+			+ (node.text ?? "")
+			+ "\n---\n";
+	} else if (node.type == DOC_TYPE.CHAPTER) {
+		return (node.uuid ? `#CHAPTER_ID:${node.uuid}\n` : "")
+			+ (node.ref ? `#DOCUMENT:${node.ref}\n` : "")
+			+ (node.text ?? "")
+			+ "\n---\n";
+	} else if (node.type == DOC_TYPE.INDEX) {
+		return (node.uuid ? `#INDEX_ID:${node.uuid}\n` : "")
+			+ (node.ref ? `#DOCUMENT:${node.ref}\n` : "")
+			+ (node.text ?? "")
+			+ "\n---\n";
+	}
+}
+
+
+
+
+
+
+export async function __wordDBSearch(word: string, tableName: string, limit: number = 100, type?: DOC_TYPE): Promise<NodeDoc[]> {
 	try {
 		const db = await lancedb.connect(dbPath)
 		const table = await db.openTable(tableName)
@@ -104,34 +253,7 @@ export async function wordDBSearch(word: string, tableName: string, limit: numbe
 	}
 }
 
-
-export async function multiWordDBSearch(words: string[], tableName: string, limit: number = 100, type?: DOC_TYPE): Promise<NodeDoc[]> {
-	try {
-		const db = await lancedb.connect(dbPath)
-		const table = await db.openTable(tableName)
-		const searchQuery = table.query()
-		
-		let sql = words.map(word => {
-			const cleanWord = word.toLowerCase().replace(/[^a-zA-Z0-9]/g, '')
-			return `regexp_replace(LOWER(text), '[^a-zA-Z0-9]', '', 'g') LIKE '%${cleanWord}%'`
-		}).join(" AND ");
-		
-		if (!!type) sql += ` AND type = '${type}'`
-		const likeDocs = (await searchQuery
-			.where(sql)
-			.limit(limit)
-			.toArray())
-			.map((item) => ({ ...item, vector: [...item.vector] }))
-
-		return Object.values(likeDocs)
-
-	} catch (error) {
-		console.error("Error in multiWordDBSearch: ", error);
-		return [];
-	}
-}
-
-export async function multiWordDBSearch2(words: string[], tableName: string, limit: number = 100, type?: DOC_TYPE): Promise<NodeDoc[]> {
+export async function __multiWordDBSearch2(words: string[], tableName: string, limit: number = 100, type?: DOC_TYPE): Promise<NodeDoc[]> {
 	try {
 		const db = await lancedb.connect(dbPath)
 		const table = await db.openTable(tableName)
@@ -175,77 +297,3 @@ export async function multiWordDBSearch2(words: string[], tableName: string, lim
 	}
 }
 
-
-export async function getAllIndex(tableName: string, refs?: string[]): Promise<NodeDoc[]> {
-	try {
-		const db = await lancedb.connect(dbPath);
-		const table = await db.openTable(tableName);
-		const searchQuery = table.query()
-		if (!!refs && refs.length > 0) {
-			const whereClause = refs.map(r => `ref LIKE '%${r}%'`).join(" OR ")
-			searchQuery.where(whereClause)
-		}
-		const docs: NodeDoc[] = (await searchQuery.where(`type = '${DOC_TYPE.INDEX}'`).toArray())
-			.map((item) => ({ ...item, vector: [...item.vector] }))
-		return docs
-	} catch (error) {
-		console.error("Error retrieving all index:", error);
-		return [];
-	}
-}
-
-
-export async function getItemById(uuid: string, tableName: string): Promise<NodeDoc | null> {
-	try {
-		const db = await lancedb.connect(dbPath);
-		const table = await db.openTable(tableName);
-		const results: NodeDoc[] = await table.query()
-			.where(`uuid = '${uuid}'`)
-			.limit(1)
-			.toArray();
-		return results?.[0];
-	} catch (error) {
-		console.error("Error retrieving item by ID:", error);
-		return null;
-	}
-}
-
-
-
-/**
- * Deletes the entire LanceDB database directory
- * @returns Promise that resolves when deletion is complete
- */
-export async function deleteVectorDB(): Promise<boolean> {
-	// Ask for confirmation before deleting the database
-	const readline = await import('readline');
-	const rl = readline.createInterface({input: process.stdin,output: process.stdout});
-	const confirmation = await new Promise<boolean>((resolve) => {
-		rl.question('Are you sure you want to definitely delete the database? (yes/no): ', (answer) => {
-			resolve(answer.toLowerCase() === 'yes');
-		});
-	});
-	rl.close();
-	if (!confirmation) {
-		console.log('Database deletion cancelled.');
-		return false
-	}
-	console.log('Proceeding with database deletion...');
-
-	try {
-		// Check if the directory exists before attempting to delete
-		await fs.access(dbPath);
-		// Delete the directory and all its contents recursively
-		await fs.rm(dbPath, { recursive: true, force: true });
-		console.log(`Vector database at ${dbPath} has been deleted`);
-		return true
-	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-			console.log(`Vector database at ${dbPath} does not exist`);
-			return false
-		} else {
-			console.error(`Error deleting vector database:`, error);
-			throw error;
-		}
-	}
-}
